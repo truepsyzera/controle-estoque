@@ -47,6 +47,9 @@
   .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
   .color-dot.selected { border-color: #fafaf9; }
 
+  .shelf-row-wrap { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+  .shelf-delete-btn { background: transparent; border: none; color: #78716c; opacity: 0.55; cursor: pointer; padding: 6px 7px; border-radius: 6px; font-size: 13px; flex-shrink: 0; }
+  .shelf-delete-btn:hover, .shelf-delete-btn:active { opacity: 1; color: #f87171; background: #1c1917; }
   .add-shelf-btn { display: flex; align-items: center; gap: 7px; padding: 9px 10px; margin-top: 4px; border-radius: 8px; border: 1px dashed #44403c; background: transparent; color: #a8a29e; font-size: 13px; font-weight: 600; cursor: pointer; }
 
   .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -56,6 +59,11 @@
   .search-wrap { position: relative; width: 150px; }
   .search-wrap input { padding-left: 26px !important; }
   .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #78716c; font-size: 12px; }
+  .scope-toggle { display: flex; border: 1px solid #44403c; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+  .scope-btn { background: transparent; border: none; color: #78716c; font-size: 11px; font-weight: 700; padding: 6px 9px; cursor: pointer; }
+  .scope-btn.active { background: #d97706; color: #1c1917; }
+  .scope-btn:not(.active):hover { background: #1c1917; color: #e7e5e4; }
+  .item-shelf-tag { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #a8a29e; flex-shrink: 0; background: #1c1917; padding: 3px 7px; border-radius: 5px; }
 
   .add-item-form { padding: 12px 16px; border-bottom: 1px solid #1c1917; display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
   .field { display: flex; flex-direction: column; gap: 4px; }
@@ -172,6 +180,7 @@
     shelves: [],
     selectedShelfId: null,
     search: "",
+    searchScope: "shelf",
     collapsed: false,
     showNewShelf: false,
     newShelfName: "",
@@ -254,12 +263,13 @@
 
     state.shelves.forEach(function (shelf) {
       var activeClass = shelf.id === state.selectedShelfId ? " active" : "";
-      html += '<div class="shelf-drop-wrap" data-shelf-drop="' + shelf.id + '" style="border-radius:8px;">' +
-        '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '">' +
+      html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '">' +
+        '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '" style="flex:1;">' +
           '<span class="shelf-dot" style="background:' + shelf.color + '"></span>' +
           '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
           '<span class="shelf-count mono">' + shelf.items.length + '</span>' +
         '</button>' +
+        '<button class="shelf-delete-btn" data-delete-shelf="' + shelf.id + '" title="Remover prateleira">🗑</button>' +
       '</div>';
     });
 
@@ -289,6 +299,20 @@
         state.selectedShelfId = btn.getAttribute("data-select-shelf");
         state.search = "";
         render();
+      });
+    });
+
+    sidebar.querySelectorAll("[data-delete-shelf]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var shelfId = btn.getAttribute("data-delete-shelf");
+        var shelf = state.shelves.find(function (s) { return s.id === shelfId; });
+        if (!shelf) return;
+        openConfirmModal(
+          "Remover prateleira?",
+          'Isso vai apagar "' + shelf.name + '" e todos os itens dentro dela.',
+          function () { removeShelf(shelfId); }
+        );
       });
     });
 
@@ -351,10 +375,15 @@
     var html = '<button class="collapse-btn" id="toggleCollapse">' + (state.collapsed ? "▶" : "▼") + '</button>';
 
     if (shelf) {
+      var scopeAllActive = state.searchScope === "all";
       html += '<span class="shelf-dot" style="background:' + shelf.color + '"></span>' +
         '<div class="shelf-title">' + escapeHtml(shelf.name) + '</div>' +
         '<div class="search-wrap"><span class="search-icon">🔍</span>' +
           '<input type="text" id="searchInput" placeholder="Buscar item..." value="' + escapeHtml(state.search) + '"></div>' +
+        '<div class="scope-toggle">' +
+          '<button class="scope-btn' + (scopeAllActive ? "" : " active") + '" data-scope="shelf">Esta</button>' +
+          '<button class="scope-btn' + (scopeAllActive ? " active" : "") + '" data-scope="all">Todas</button>' +
+        '</div>' +
         '<button class="btn btn-ghost btn-icon" style="color:#f87171;" id="deleteShelfBtn" title="Remover prateleira">🗑</button>';
     } else {
       html += '<div style="font-size:13px;color:#78716c;">Nenhuma prateleira selecionada</div>';
@@ -378,6 +407,13 @@
           'Isso vai apagar "' + shelf.name + '" e todos os itens dentro dela.',
           function () { removeShelf(shelf.id); }
         );
+      });
+      toolbar.querySelectorAll("[data-scope]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          state.searchScope = btn.getAttribute("data-scope");
+          renderToolbar();
+          renderItemsList();
+        });
       });
     }
   }
@@ -435,27 +471,49 @@
     }
 
     var q = (state.search || "").trim().toLowerCase();
-    var items = shelf.items.filter(function (i) {
+    var isGlobal = state.searchScope === "all";
+
+    // Monta uma lista de pares {item, shelf} — na busca "Esta" só da
+    // prateleira atual, na busca "Todas" juntando todas as prateleiras.
+    var pairs = [];
+    if (isGlobal) {
+      state.shelves.forEach(function (s) {
+        s.items.forEach(function (i) { pairs.push({ item: i, shelf: s }); });
+      });
+    } else {
+      shelf.items.forEach(function (i) { pairs.push({ item: i, shelf: shelf }); });
+    }
+
+    var filtered = pairs.filter(function (p) {
       if (!q) return true;
-      return i.description.toLowerCase().indexOf(q) !== -1 || i.code.toLowerCase().indexOf(q) !== -1;
+      return p.item.description.toLowerCase().indexOf(q) !== -1 || p.item.code.toLowerCase().indexOf(q) !== -1;
     });
 
-    if (items.length === 0) {
-      var msg = shelf.items.length === 0 ? "Nenhum item nesta prateleira ainda." : "Nada encontrado para essa busca.";
+    if (isGlobal && !q) {
+      container.innerHTML = '<div class="empty-state"><div class="big-icon">🔍</div><div>Digite algo para buscar em todas as prateleiras.</div></div>';
+      return;
+    }
+
+    if (filtered.length === 0) {
+      var msg = (isGlobal ? state.shelves : [shelf]).every(function (s) { return s.items.length === 0; })
+        ? "Nenhum item cadastrado ainda."
+        : "Nada encontrado para essa busca.";
       container.innerHTML = '<div class="empty-state"><div class="big-icon">📦</div><div>' + msg + '</div></div>';
       return;
     }
 
-    var otherShelves = state.shelves.filter(function (s) { return s.id !== shelf.id; });
-
     var html = "";
-    items.forEach(function (item) {
+    filtered.forEach(function (p) {
+      var item = p.item;
+      var ownerShelf = p.shelf;
+      var otherShelves = state.shelves.filter(function (s) { return s.id !== ownerShelf.id; });
+
       if (state.editingItemId === item.id) {
         html += '<div class="item-row edit-row" data-item-id="' + item.id + '">' +
           '<input type="text" class="mono edit-code" value="' + escapeHtml(item.code) + '" id="editCode-' + item.id + '">' +
           '<input type="text" class="edit-desc" value="' + escapeHtml(item.description) + '" id="editDesc-' + item.id + '">' +
           '<input type="number" class="mono edit-qty" value="' + item.quantity + '" id="editQty-' + item.id + '">' +
-          '<button class="btn btn-primary btn-icon" data-save-edit="' + item.id + '">✓</button>' +
+          '<button class="btn btn-primary btn-icon" data-save-edit="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">✓</button>' +
           '<button class="btn btn-ghost btn-icon" data-cancel-edit="' + item.id + '">✕</button>' +
         '</div>';
       } else {
@@ -463,37 +521,49 @@
           return '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
         }).join("");
 
-        html += '<div class="item-row" data-item-id="' + item.id + '" draggable="true">' +
+        html += '<div class="item-row" data-item-id="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '" draggable="true">' +
           '<span class="grip">⠿</span>' +
+          (isGlobal ? '<span class="item-shelf-tag"><span class="shelf-dot" style="width:7px;height:7px;background:' + ownerShelf.color + '"></span>' + escapeHtml(ownerShelf.name) + '</span>' : '') +
           '<span class="item-code mono">' + escapeHtml(item.code) + '</span>' +
           '<div class="item-desc-wrap"><div class="item-desc" data-desc-scroll>' + escapeHtml(item.description) + '</div></div>' +
           '<div class="qty-controls">' +
-            '<button class="qty-btn" data-qty-down="' + item.id + '">−</button>' +
+            '<button class="qty-btn" data-qty-down="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">−</button>' +
             '<span class="qty-val mono">' + item.quantity + '</span>' +
-            '<button class="qty-btn" data-qty-up="' + item.id + '">+</button>' +
+            '<button class="qty-btn" data-qty-up="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">+</button>' +
           '</div>' +
-          (otherShelves.length ? '<select class="move-select" data-move-item="' + item.id + '">' + moveOptions + '</select>' : '') +
+          (otherShelves.length ? '<select class="move-select" data-move-item="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">' + moveOptions + '</select>' : '') +
           '<button class="btn btn-ghost btn-icon" data-edit-item="' + item.id + '">✎</button>' +
-          '<button class="btn btn-ghost btn-icon" style="color:#f87171;" data-delete-item="' + item.id + '">🗑</button>' +
+          '<button class="btn btn-ghost btn-icon" style="color:#f87171;" data-delete-item="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">🗑</button>' +
         '</div>';
       }
     });
 
     container.innerHTML = html;
 
+    function findShelf(id) {
+      return state.shelves.find(function (s) { return s.id === id; });
+    }
+
     // Bind: quantity
     container.querySelectorAll("[data-qty-up]").forEach(function (btn) {
-      btn.addEventListener("click", function () { bumpQty(shelf, btn.getAttribute("data-qty-up"), 1); });
+      btn.addEventListener("click", function () {
+        var s = findShelf(btn.getAttribute("data-owner-shelf"));
+        if (s) bumpQty(s, btn.getAttribute("data-qty-up"), 1);
+      });
     });
     container.querySelectorAll("[data-qty-down]").forEach(function (btn) {
-      btn.addEventListener("click", function () { bumpQty(shelf, btn.getAttribute("data-qty-down"), -1); });
+      btn.addEventListener("click", function () {
+        var s = findShelf(btn.getAttribute("data-owner-shelf"));
+        if (s) bumpQty(s, btn.getAttribute("data-qty-down"), -1);
+      });
     });
 
     // Bind: move via select
     container.querySelectorAll("[data-move-item]").forEach(function (sel) {
       sel.addEventListener("change", function () {
         var toId = sel.value;
-        if (toId) moveItem(sel.getAttribute("data-move-item"), shelf.id, toId);
+        var fromId = sel.getAttribute("data-owner-shelf");
+        if (toId) moveItem(sel.getAttribute("data-move-item"), fromId, toId);
       });
     });
 
@@ -513,7 +583,8 @@
     container.querySelectorAll("[data-save-edit]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-save-edit");
-        saveEditItem(shelf, id);
+        var s = findShelf(btn.getAttribute("data-owner-shelf"));
+        if (s) saveEditItem(s, id);
       });
     });
 
@@ -521,11 +592,13 @@
     container.querySelectorAll("[data-delete-item]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-delete-item");
-        var item = shelf.items.find(function (i) { return i.id === id; });
+        var ownerShelfId = btn.getAttribute("data-owner-shelf");
+        var s = findShelf(ownerShelfId);
+        var item = s ? s.items.find(function (i) { return i.id === id; }) : null;
         openConfirmModal(
           "Remover item?",
           'Isso vai remover "' + (item ? item.description : "") + '" da prateleira.',
-          function () { removeItem(shelf.id, id); }
+          function () { removeItem(ownerShelfId, id); }
         );
       });
     });
@@ -561,7 +634,7 @@
     container.querySelectorAll(".item-row[draggable=true]").forEach(function (row) {
       row.addEventListener("dragstart", function () {
         state.dragItemId = row.getAttribute("data-item-id");
-        state.dragFromShelfId = shelf.id;
+        state.dragFromShelfId = row.getAttribute("data-owner-shelf");
         row.classList.add("dragging");
       });
       row.addEventListener("dragend", function () {
