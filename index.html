@@ -79,7 +79,10 @@
   .item-row.dragging { opacity: 0.4; }
   .grip { color: #44403c; flex-shrink: 0; font-size: 14px; }
   .item-code { font-size: 11px; color: #a8a29e; background: #1c1917; padding: 3px 7px; border-radius: 5px; flex-shrink: 0; min-width: 50px; text-align: center; }
-  .item-desc { flex: 1; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
+  .item-desc-wrap { flex: 1; min-width: 60px; overflow: hidden; }
+  .item-desc { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; touch-action: pan-x; cursor: grab; }
+  .item-desc::-webkit-scrollbar { display: none; }
+  .item-desc.dragging-text { cursor: grabbing; }
   .qty-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .qty-btn { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #44403c; background: transparent; color: #e7e5e4; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .qty-val { font-size: 13px; color: #fafaf9; width: 34px; text-align: center; font-weight: 600; }
@@ -105,6 +108,17 @@
     .sidebar { position: absolute; z-index: 50; background: #0c0a09; height: calc(100vh - 66px); }
     .sidebar.collapsed { display: none; }
     .layout { position: relative; }
+  }
+
+  /* Deixa a interface mais compacta quando o celular está deitado
+     (pouca altura disponível), pra sobrar espaço pra lista de itens */
+  @media (orientation: landscape) and (max-height: 480px) {
+    header { padding: 8px 14px; }
+    .logo { width: 28px; height: 28px; font-size: 13px; }
+    .brand-title { font-size: 14px; }
+    .toolbar, .add-item-form { padding: 8px 14px; }
+    .field label { display: none; }
+    .sidebar { height: calc(100vh - 50px); }
   }
 </style>
 </head>
@@ -452,7 +466,7 @@
         html += '<div class="item-row" data-item-id="' + item.id + '" draggable="true">' +
           '<span class="grip">⠿</span>' +
           '<span class="item-code mono">' + escapeHtml(item.code) + '</span>' +
-          '<span class="item-desc">' + escapeHtml(item.description) + '</span>' +
+          '<div class="item-desc-wrap"><div class="item-desc" data-desc-scroll>' + escapeHtml(item.description) + '</div></div>' +
           '<div class="qty-controls">' +
             '<button class="qty-btn" data-qty-down="' + item.id + '">−</button>' +
             '<span class="qty-val mono">' + item.quantity + '</span>' +
@@ -513,6 +527,33 @@
           'Isso vai remover "' + (item ? item.description : "") + '" da prateleira.',
           function () { removeItem(shelf.id, id); }
         );
+      });
+    });
+
+    // Bind: arrastar a descrição na horizontal (texto grande) sem disparar o
+    // drag de mover item entre prateleiras
+    container.querySelectorAll("[data-desc-scroll]").forEach(function (desc) {
+      desc.setAttribute("draggable", "false");
+      desc.addEventListener("dragstart", function (e) { e.stopPropagation(); e.preventDefault(); });
+      desc.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+      desc.addEventListener("touchstart", function (e) { e.stopPropagation(); }, { passive: true });
+
+      // Suporte a arrastar com o mouse (desktop/trackpad); no toque, o
+      // scroll horizontal nativo já funciona sozinho.
+      var isDown = false, startX = 0, startScroll = 0;
+      desc.addEventListener("mousedown", function (e) {
+        isDown = true;
+        desc.classList.add("dragging-text");
+        startX = e.pageX;
+        startScroll = desc.scrollLeft;
+      });
+      window.addEventListener("mousemove", function (e) {
+        if (!isDown) return;
+        desc.scrollLeft = startScroll - (e.pageX - startX);
+      });
+      window.addEventListener("mouseup", function () {
+        isDown = false;
+        desc.classList.remove("dragging-text");
       });
     });
 
