@@ -4,30 +4,6 @@ Sistema de controle de estoque por prateleiras. Funciona como app instalável
 no Android, e depois de instalado roda 100% offline (os dados ficam salvos
 só no seu celular).
 
-## Como publicar no GitHub Pages (gratuito)
-
-1. No GitHub, crie um repositório novo (pode ser público), por exemplo
-   chamado `controle-estoque`.
-2. Envie estes itens para a raiz do repositório, mantendo essa mesma
-   estrutura de pastas:
-   ```
-   index.html
-   manifest.json
-   sw.js
-   icons/icon-192.png
-   icons/icon-512.png
-   assets/logo.png
-   ```
-   (No GitHub: "Add file" → "Upload files", arraste tudo, sem esquecer que
-   os ícones ficam dentro da pasta `icons` e o logotipo dentro da pasta
-   `assets`.)
-3. Vá em **Settings** → **Pages** (menu à esquerda).
-4. Em "Build and deployment" → "Source", selecione **Deploy from a branch**.
-5. Em "Branch", selecione `main` (ou `master`) e a pasta `/ (root)`. Clique
-   em **Save**.
-6. Espere 1-2 minutos. O GitHub vai te dar um link parecido com:
-   `https://SEU-USUARIO.github.io/controle-estoque/`
-
 ## Como instalar no celular
 
 1. Abra esse link pelo Chrome no celular.
