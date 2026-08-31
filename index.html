@@ -57,6 +57,11 @@
   .color-dot.selected { border-color: #fafaf9; }
 
   .shelf-row-wrap { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+  .shelf-reorder-btns { display: flex; flex-direction: column; flex-shrink: 0; }
+  .shelf-reorder-btn { background: transparent; border: none; color: #57534e; cursor: pointer; padding: 0 3px; font-size: 8px; line-height: 1.4; }
+  .shelf-reorder-btn:hover:not(:disabled) { color: #e7e5e4; }
+  .shelf-reorder-btn:disabled { opacity: 0.25; cursor: default; }
+  .shelf-row-wrap.dragging { opacity: 0.4; }
   .shelf-delete-btn { background: transparent; border: none; color: #78716c; opacity: 0.55; cursor: pointer; padding: 6px 7px; border-radius: 6px; font-size: 13px; flex-shrink: 0; }
   .shelf-delete-btn:hover, .shelf-delete-btn:active { opacity: 1; color: #f87171; background: #1c1917; }
   .add-shelf-btn { display: flex; align-items: center; gap: 7px; padding: 9px 10px; margin-top: 4px; border-radius: 8px; border: 1px dashed #44403c; background: transparent; color: #a8a29e; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -226,7 +231,8 @@
     newShelfColor: SHELF_COLORS[0].value,
     editingItemId: null,
     dragItemId: null,
-    dragFromShelfId: null
+    dragFromShelfId: null,
+    dragShelfId: null
   };
 
   function uid() {
@@ -304,9 +310,17 @@
     html += '<button class="sidebar-compact-toggle" id="toggleCompact" title="' +
       (compact ? "Expandir prateleiras" : "Recolher prateleiras") + '">' + (compact ? "»" : "«") + '</button>';
 
-    state.shelves.forEach(function (shelf) {
+    state.shelves.forEach(function (shelf, idx) {
       var activeClass = shelf.id === state.selectedShelfId ? " active" : "";
-      html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '">' +
+      var isFirst = idx === 0;
+      var isLast = idx === state.shelves.length - 1;
+      html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '" draggable="true">' +
+        (compact ? '' :
+          '<div class="shelf-reorder-btns">' +
+            '<button class="shelf-reorder-btn" data-move-shelf-up="' + shelf.id + '" ' + (isFirst ? "disabled" : "") + ' title="Mover para cima">▲</button>' +
+            '<button class="shelf-reorder-btn" data-move-shelf-down="' + shelf.id + '" ' + (isLast ? "disabled" : "") + ' title="Mover para baixo">▼</button>' +
+          '</div>'
+        ) +
         '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '" style="flex:1;" title="' + escapeHtml(shelf.name) + '">' +
           '<span class="shelf-dot" style="background:' + shelf.color + '"></span>' +
           '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
@@ -366,7 +380,29 @@
       });
     });
 
+    sidebar.querySelectorAll("[data-move-shelf-up]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        moveShelfStep(btn.getAttribute("data-move-shelf-up"), -1);
+      });
+    });
+    sidebar.querySelectorAll("[data-move-shelf-down]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        moveShelfStep(btn.getAttribute("data-move-shelf-down"), 1);
+      });
+    });
+
     sidebar.querySelectorAll("[data-shelf-drop]").forEach(function (wrap) {
+      wrap.addEventListener("dragstart", function (e) {
+        state.dragShelfId = wrap.getAttribute("data-shelf-drop");
+        wrap.classList.add("dragging");
+        e.stopPropagation();
+      });
+      wrap.addEventListener("dragend", function () {
+        state.dragShelfId = null;
+        wrap.classList.remove("dragging");
+      });
       wrap.addEventListener("dragover", function (e) {
         e.preventDefault();
         wrap.classList.add("shelf-drop-target");
@@ -378,7 +414,10 @@
         e.preventDefault();
         wrap.classList.remove("shelf-drop-target");
         var toShelfId = wrap.getAttribute("data-shelf-drop");
-        if (state.dragItemId && state.dragFromShelfId) {
+        if (state.dragShelfId) {
+          reorderShelf(state.dragShelfId, toShelfId);
+          state.dragShelfId = null;
+        } else if (state.dragItemId && state.dragFromShelfId) {
           moveItem(state.dragItemId, state.dragFromShelfId, toShelfId);
         }
       });
@@ -406,6 +445,36 @@
         render();
       });
     }
+  }
+
+  // Reordena as prateleiras: tira a prateleira arrastada do lugar e insere
+  // na posição de destino (soltar em cima de outra prateleira).
+  function reorderShelf(draggedId, targetId) {
+    if (draggedId === targetId) return;
+    var shelves = state.shelves;
+    var fromIdx = shelves.findIndex(function (s) { return s.id === draggedId; });
+    if (fromIdx === -1) return;
+    var moved = shelves.splice(fromIdx, 1)[0];
+    var toIdx = shelves.findIndex(function (s) { return s.id === targetId; });
+    if (toIdx === -1) toIdx = shelves.length;
+    shelves.splice(toIdx, 0, moved);
+    saveData();
+    renderSidebar();
+  }
+
+  // Move uma prateleira uma posição pra cima (-1) ou pra baixo (+1) na lista
+  // — alternativa confiável no toque, onde arrastar nem sempre funciona bem.
+  function moveShelfStep(shelfId, direction) {
+    var shelves = state.shelves;
+    var idx = shelves.findIndex(function (s) { return s.id === shelfId; });
+    if (idx === -1) return;
+    var newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= shelves.length) return;
+    var tmp = shelves[idx];
+    shelves[idx] = shelves[newIdx];
+    shelves[newIdx] = tmp;
+    saveData();
+    renderSidebar();
   }
 
   function confirmNewShelf() {
