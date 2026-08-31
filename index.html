@@ -145,13 +145,28 @@
       background: #fff;
       color: #111;
       padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
     }
-    #printArea h1 { font-size: 20px; margin-bottom: 4px; }
-    #printArea .print-meta { font-size: 12px; color: #444; margin-bottom: 16px; }
-    #printArea table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    #printArea th, #printArea td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
-    #printArea th { background: #eee; }
-    #printArea td:last-child, #printArea th:last-child { text-align: right; width: 90px; }
+
+    #printArea .ph-field-label { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
+
+    #printArea .print-header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    #printArea .print-header-table td { border: 1px solid #888; padding: 6px 12px; vertical-align: middle; }
+    #printArea .ph-logo { width: 130px; text-align: center; }
+    #printArea .ph-logo img { max-width: 110px; max-height: 60px; display: block; margin: 0 auto; }
+    #printArea .ph-title { text-align: center; }
+    #printArea .ph-title-text { font-size: 14px; font-weight: 700; margin-top: 3px; }
+    #printArea .ph-meta { width: 100px; text-align: center; }
+    #printArea .ph-meta-value { font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+    #printArea .print-local-row { display: flex; border: 1px solid #888; border-top: none; margin-bottom: 18px; }
+    #printArea .print-local { flex: 1; padding: 8px 12px; font-size: 12px; border-right: 1px solid #888; display: flex; align-items: center; gap: 6px; }
+    #printArea .print-shelf-badge { padding: 8px 16px; font-size: 13px; font-weight: 700; text-align: center; display: flex; align-items: center; gap: 6px; }
+
+    #printArea .print-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #printArea .print-items-table th, #printArea .print-items-table td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
+    #printArea .print-items-table th { background: #eee; }
+    #printArea .print-items-table td:last-child, #printArea .print-items-table th:last-child { text-align: right; width: 90px; }
   }
 
   @media (max-width: 560px) {
@@ -178,7 +193,7 @@
   <div class="brand">
     <div class="brand-top">
       <img class="brand-logo" src="assets/logo.png" alt="Denis - Controle de Estoque">
-      <span class="version-tag mono">v 0.2</span>
+      <span class="version-tag mono">v 0.5</span>
     </div>
     <div class="brand-sub mono" id="headerStats">0 prateleiras · 0 itens · 0 unid.</div>
   </div>
@@ -219,6 +234,16 @@
     { name: "Cinza", value: "#525252" }
   ];
 
+  // Dados fixos do documento da empresa (POP 085), usados no cabeçalho do
+  // PDF gerado. Revisão e Vigência mudam a cada geração — ver state.pdfMeta.
+  var DOC_INFO = {
+    empresa: "Alquimia Cosméticos",
+    titulo: "ANEXO II - Identificação do Endereçamento",
+    codigo: "POP 085",
+    totalPaginas: "1",
+    local: "DEPÓSITO DE EMBALAGENS PRIMÁRIAS E SECUNDÁRIAS"
+  };
+
   var state = {
     shelves: [],
     selectedShelfId: null,
@@ -232,7 +257,8 @@
     editingItemId: null,
     dragItemId: null,
     dragFromShelfId: null,
-    dragShelfId: null
+    dragShelfId: null,
+    pdfMeta: { revisao: "000", vigencia: "" }
   };
 
   function uid() {
@@ -246,6 +272,10 @@
         var parsed = JSON.parse(raw);
         state.shelves = parsed.shelves || [];
         state.selectedShelfId = state.shelves[0] ? state.shelves[0].id : null;
+        if (parsed.pdfMeta) {
+          state.pdfMeta.revisao = parsed.pdfMeta.revisao || state.pdfMeta.revisao;
+          state.pdfMeta.vigencia = parsed.pdfMeta.vigencia || state.pdfMeta.vigencia;
+        }
       }
     } catch (e) {
       console.error("Erro ao carregar dados", e);
@@ -254,7 +284,7 @@
 
   function saveData() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ shelves: state.shelves }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ shelves: state.shelves, pdfMeta: state.pdfMeta }));
     } catch (e) {
       showToast("Não consegui salvar (armazenamento cheio ou bloqueado).");
     }
@@ -538,7 +568,7 @@
         });
       });
       document.getElementById("printShelfBtn").addEventListener("click", function () {
-        printShelf(shelf);
+        openPdfModal(shelf);
       });
     }
   }
@@ -821,13 +851,61 @@
     showToast('Prateleira "' + (shelf ? shelf.name : "") + '" removida');
   }
 
-  // Monta uma tabela limpa (Código, Descrição, Quantidade) com a lista
-  // completa da prateleira e abre a tela de impressão do navegador, onde o
-  // usuário pode escolher "Salvar como PDF".
-  function printShelf(shelf) {
+  // Pergunta a Revisão e a Vigência (únicos campos que mudam a cada PDF
+  // gerado) antes de montar o documento, já vindo preenchido com o último
+  // valor usado.
+  function openPdfModal(shelf) {
+    var root = document.getElementById("modalRoot");
+    var vigenciaDefault = state.pdfMeta.vigencia || todayBR();
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay">' +
+        '<div class="modal-box">' +
+          '<div class="modal-title">Gerar PDF — ' + escapeHtml(shelf.name) + '</div>' +
+          '<div class="modal-text">Confirme os dados desta versão do documento.</div>' +
+          '<div class="field" style="margin-bottom:10px;">' +
+            '<label>Revisão</label>' +
+            '<input type="text" id="pdfRevisaoInput" value="' + escapeHtml(state.pdfMeta.revisao) + '">' +
+          '</div>' +
+          '<div class="field" style="margin-bottom:16px;">' +
+            '<label>Vigência</label>' +
+            '<input type="text" id="pdfVigenciaInput" placeholder="dd/mm/aaaa" value="' + escapeHtml(vigenciaDefault) + '">' +
+          '</div>' +
+          '<div class="modal-actions">' +
+            '<button class="btn btn-ghost" id="pdfModalCancel">Cancelar</button>' +
+            '<button class="btn btn-primary" id="pdfModalConfirm">🖨 Gerar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("pdfModalCancel").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
+      if (e.target.id === "modalOverlay") close();
+    });
+    document.getElementById("pdfModalConfirm").addEventListener("click", function () {
+      var revisao = document.getElementById("pdfRevisaoInput").value.trim() || "000";
+      var vigencia = document.getElementById("pdfVigenciaInput").value.trim() || vigenciaDefault;
+      state.pdfMeta.revisao = revisao;
+      state.pdfMeta.vigencia = vigencia;
+      saveData();
+      close();
+      printShelf(shelf, revisao, vigencia);
+    });
+  }
+
+  function todayBR() {
+    var d = new Date();
+    var dd = String(d.getDate()).padStart(2, "0");
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    return dd + "/" + mm + "/" + d.getFullYear();
+  }
+
+  // Monta o cabeçalho no padrão do documento da empresa (logo, Assunto/
+  // Título, Revisão/Código/Vigência/Total de páginas, Local e a etiqueta da
+  // prateleira) seguido da tabela Código/Descrição/Quantidade, e abre a tela
+  // de impressão do navegador, onde o usuário pode escolher "Salvar como PDF".
+  function printShelf(shelf, revisao, vigencia) {
     var printArea = document.getElementById("printArea");
-    var now = new Date();
-    var dateStr = now.toLocaleDateString("pt-BR") + " às " + now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
     var rows = shelf.items.map(function (item) {
       return "<tr>" +
@@ -837,12 +915,29 @@
       "</tr>";
     }).join("");
 
-    var totalQty = shelf.items.reduce(function (acc, i) { return acc + (i.quantity || 0); }, 0);
-
     printArea.innerHTML =
-      '<h1>' + escapeHtml(shelf.name) + '</h1>' +
-      '<div class="print-meta">' + shelf.items.length + ' itens · ' + totalQty + ' unidades · gerado em ' + dateStr + '</div>' +
-      '<table>' +
+      '<table class="print-header-table"><tbody>' +
+        '<tr>' +
+          '<td class="ph-logo" rowspan="2"><img src="assets/logo-empresa.png" alt="' + escapeHtml(DOC_INFO.empresa) + '"></td>' +
+          '<td class="ph-title" rowspan="2">' +
+            '<div class="ph-field-label">Assunto/Título</div>' +
+            '<div class="ph-title-text">' + escapeHtml(DOC_INFO.titulo) + '</div>' +
+          '</td>' +
+          '<td class="ph-meta"><div class="ph-field-label">Revisão</div><div class="ph-meta-value">' + escapeHtml(revisao) + '</div></td>' +
+          '<td class="ph-meta"><div class="ph-field-label">Código</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.codigo) + '</div></td>' +
+        '</tr>' +
+        '<tr>' +
+          '<td class="ph-meta"><div class="ph-field-label">Vigência</div><div class="ph-meta-value">' + escapeHtml(vigencia) + '</div></td>' +
+          '<td class="ph-meta"><div class="ph-field-label">Total de páginas</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.totalPaginas) + '</div></td>' +
+        '</tr>' +
+      '</tbody></table>' +
+      '<div class="print-local-row">' +
+        '<div class="print-local"><b class="ph-field-label" style="font-size:11px;">Local:</b> ' + escapeHtml(DOC_INFO.local) + '</div>' +
+        '<div class="print-shelf-badge" style="background:' + shelf.color + '22;border-left:4px solid ' + shelf.color + ';">' +
+          '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>&nbsp;<b>' + escapeHtml(shelf.name) + '</b>' +
+        '</div>' +
+      '</div>' +
+      '<table class="print-items-table">' +
         '<thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="3" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
       '</table>';

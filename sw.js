@@ -2,14 +2,15 @@
 // Guarda os arquivos do app em cache para que ele funcione 100% offline
 // depois da primeira vez que for aberto/instalado.
 
-var CACHE_NAME = "controle-estoque-cache-v7";
+var CACHE_NAME = "controle-estoque-cache-v8";
 var FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./assets/logo.png"
+  "./assets/logo.png",
+  "./assets/logo-empresa.png"
 ];
 
 self.addEventListener("install", function (event) {
