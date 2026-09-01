@@ -42,6 +42,8 @@
   .sidebar.compact .shelf-btn { flex-direction: column; gap: 3px; padding: 8px 2px; text-align: center; }
   .sidebar.compact .shelf-name { font-size: 10.5px; white-space: normal; text-align: center; line-height: 1.2; max-height: 2.4em; overflow: hidden; }
   .sidebar.compact .shelf-row-wrap { width: 100%; }
+  .sidebar.compact .print-selection-bar { flex-direction: column; width: 100%; padding: 5px 2px; }
+  .sidebar.compact .print-selection-bar span { display: none; }
   .compact-add { width: 100%; justify-content: center; font-size: 16px; padding: 8px 0; }
   .shelf-btn { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; border: none; cursor: pointer; background: transparent; text-align: left; width: 100%; color: #e7e5e4; }
   .shelf-btn:hover { background: #1c1917; }
@@ -62,8 +64,10 @@
   .shelf-reorder-btn:hover:not(:disabled) { color: #e7e5e4; }
   .shelf-reorder-btn:disabled { opacity: 0.25; cursor: default; }
   .shelf-row-wrap.dragging { opacity: 0.4; }
-  .shelf-delete-btn { background: transparent; border: none; color: #78716c; opacity: 0.55; cursor: pointer; padding: 6px 7px; border-radius: 6px; font-size: 13px; flex-shrink: 0; }
-  .shelf-delete-btn:hover, .shelf-delete-btn:active { opacity: 1; color: #f87171; background: #1c1917; }
+  .shelf-check-wrap { flex-shrink: 0; padding: 0 6px 0 2px; display: flex; align-items: center; }
+  .shelf-check { width: 16px; height: 16px; cursor: pointer; accent-color: #15b8c9; }
+  .print-selection-bar { display: none; align-items: center; justify-content: space-between; gap: 8px; background: #1c1917; border: 1px solid #292524; border-radius: 8px; padding: 7px 8px; margin-top: 8px; }
+  .print-selection-bar span { font-size: 11px; color: #a8a29e; }
   .add-shelf-btn { display: flex; align-items: center; gap: 7px; padding: 9px 10px; margin-top: 4px; border-radius: 8px; border: 1px dashed #44403c; background: transparent; color: #a8a29e; font-size: 13px; font-weight: 600; cursor: pointer; }
 
   .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -167,6 +171,7 @@
     #printArea .print-items-table th, #printArea .print-items-table td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
     #printArea .print-items-table th { background: #eee; }
     #printArea .print-items-table td:last-child, #printArea .print-items-table th:last-child { text-align: right; width: 90px; }
+    #printArea .print-shelf-section { margin-bottom: 28px; }
   }
 
   @media (max-width: 560px) {
@@ -193,7 +198,7 @@
   <div class="brand">
     <div class="brand-top">
       <img class="brand-logo" src="assets/logo.png" alt="Denis - Controle de Estoque">
-      <span class="version-tag mono">v 0.5</span>
+      <span class="version-tag mono">v 0.8</span>
     </div>
     <div class="brand-sub mono" id="headerStats">0 prateleiras · 0 itens · 0 unid.</div>
   </div>
@@ -264,7 +269,8 @@
     dragItemId: null,
     dragFromShelfId: null,
     dragShelfId: null,
-    pdfMeta: { revisao: "000", vigencia: "" }
+    pdfMeta: { revisao: "000", vigencia: "" },
+    printSelection: {}
   };
 
   function uid() {
@@ -350,6 +356,7 @@
       var activeClass = shelf.id === state.selectedShelfId ? " active" : "";
       var isFirst = idx === 0;
       var isLast = idx === state.shelves.length - 1;
+      var checked = state.printSelection[shelf.id] ? " checked" : "";
       html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '" draggable="true">' +
         (compact ? '' :
           '<div class="shelf-reorder-btns">' +
@@ -362,9 +369,18 @@
           '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
           (compact ? '' : '<span class="shelf-count mono">' + shelf.items.length + '</span>') +
         '</button>' +
-        (compact ? '' : '<button class="shelf-delete-btn" data-delete-shelf="' + shelf.id + '" title="Remover prateleira">🗑</button>') +
+        (compact ? '' :
+          '<label class="shelf-check-wrap" title="Selecionar para imprimir junto">' +
+            '<input type="checkbox" class="shelf-check" data-check-shelf="' + shelf.id + '"' + checked + '>' +
+          '</label>'
+        ) +
       '</div>';
     });
+
+    html += '<div class="print-selection-bar" id="printSelectionBar" style="display:none;">' +
+      '<span id="printSelectionCount" class="mono">0 selecionadas</span>' +
+      '<button class="btn btn-primary" id="printSelectionBtn" style="padding:5px 9px;font-size:11px;">🖨 PDF</button>' +
+    '</div>';
 
     if (state.showNewShelf) {
       html += '<div class="new-shelf-box">' +
@@ -402,18 +418,23 @@
       });
     });
 
-    sidebar.querySelectorAll("[data-delete-shelf]").forEach(function (btn) {
-      btn.addEventListener("click", function (e) {
+    sidebar.querySelectorAll("[data-check-shelf]").forEach(function (cb) {
+      cb.addEventListener("click", function (e) { e.stopPropagation(); });
+      cb.addEventListener("change", function (e) {
         e.stopPropagation();
-        var shelfId = btn.getAttribute("data-delete-shelf");
-        var shelf = state.shelves.find(function (s) { return s.id === shelfId; });
-        if (!shelf) return;
-        openConfirmModal(
-          "Remover prateleira?",
-          'Isso vai apagar "' + shelf.name + '" e todos os itens dentro dela.',
-          function () { removeShelf(shelfId); }
-        );
+        var shelfId = cb.getAttribute("data-check-shelf");
+        state.printSelection[shelfId] = cb.checked;
+        updatePrintSelectionBar();
       });
+    });
+
+    updatePrintSelectionBar();
+
+    document.getElementById("printSelectionBtn").addEventListener("click", function () {
+      var ids = Object.keys(state.printSelection).filter(function (id) { return state.printSelection[id]; });
+      var shelvesToPrint = state.shelves.filter(function (s) { return ids.indexOf(s.id) !== -1; });
+      if (shelvesToPrint.length === 0) return;
+      openPdfModal(shelvesToPrint);
     });
 
     sidebar.querySelectorAll("[data-move-shelf-up]").forEach(function (btn) {
@@ -513,6 +534,21 @@
     renderSidebar();
   }
 
+  // Atualiza a barrinha "N selecionadas" no rodapé da lista de prateleiras,
+  // sem precisar re-renderizar a barra lateral inteira (evita perder o
+  // estado dos checkboxes já marcados).
+  function updatePrintSelectionBar() {
+    var bar = document.getElementById("printSelectionBar");
+    if (!bar) return;
+    var count = Object.keys(state.printSelection).filter(function (id) { return state.printSelection[id]; }).length;
+    if (count > 0) {
+      bar.style.display = "flex";
+      document.getElementById("printSelectionCount").textContent = count + (count === 1 ? " selecionada" : " selecionadas");
+    } else {
+      bar.style.display = "none";
+    }
+  }
+
   function confirmNewShelf() {
     var name = (state.newShelfName || "").trim();
     if (!name) return;
@@ -574,7 +610,7 @@
         });
       });
       document.getElementById("printShelfBtn").addEventListener("click", function () {
-        openPdfModal(shelf);
+        openPdfModal([shelf]);
       });
     }
   }
@@ -851,6 +887,7 @@
     if (state.selectedShelfId === shelfId) {
       state.selectedShelfId = state.shelves[0] ? state.shelves[0].id : null;
     }
+    delete state.printSelection[shelfId];
     closeModal();
     saveData();
     render();
@@ -859,15 +896,23 @@
 
   // Pergunta a Revisão e a Vigência (únicos campos que mudam a cada PDF
   // gerado) antes de montar o documento, já vindo preenchido com o último
-  // valor usado.
-  function openPdfModal(shelf) {
+  // valor usado. Aceita uma prateleira só ou uma lista, pra imprimir várias
+  // juntas num único PDF.
+  function openPdfModal(shelvesArray) {
     var root = document.getElementById("modalRoot");
     var vigenciaDefault = state.pdfMeta.vigencia || todayBR();
+    var titleText = shelvesArray.length === 1
+      ? "Gerar PDF — " + escapeHtml(shelvesArray[0].name)
+      : "Gerar PDF — " + shelvesArray.length + " prateleiras";
+    var descText = shelvesArray.length === 1
+      ? "Confirme os dados desta versão do documento."
+      : "Vai gerar um único PDF com: " + shelvesArray.map(function (s) { return escapeHtml(s.name); }).join(", ") + ".";
+
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
         '<div class="modal-box">' +
-          '<div class="modal-title">Gerar PDF — ' + escapeHtml(shelf.name) + '</div>' +
-          '<div class="modal-text">Confirme os dados desta versão do documento.</div>' +
+          '<div class="modal-title">' + titleText + '</div>' +
+          '<div class="modal-text">' + descText + '</div>' +
           '<div class="field" style="margin-bottom:10px;">' +
             '<label>Revisão</label>' +
             '<input type="text" id="pdfRevisaoInput" value="' + escapeHtml(state.pdfMeta.revisao) + '">' +
@@ -895,7 +940,7 @@
       state.pdfMeta.vigencia = vigencia;
       saveData();
       close();
-      printShelf(shelf, revisao, vigencia);
+      printShelves(shelvesArray, revisao, vigencia);
     });
   }
 
@@ -908,66 +953,78 @@
 
   // Monta o cabeçalho no padrão do documento da empresa (logo, Assunto/
   // Título, Revisão/Código/Vigência/Total de páginas, Local e a etiqueta da
-  // prateleira) seguido da tabela Código/Descrição/Quantidade, e abre a tela
-  // de impressão do navegador, onde o usuário pode escolher "Salvar como PDF".
-  function printShelf(shelf, revisao, vigencia) {
+  // prateleira) seguido da tabela Código/Descrição/Quantidade — repetindo
+  // para cada prateleira da lista, uma atrás da outra, com quebra de página
+  // entre elas — e abre a tela de impressão do navegador, onde o usuário
+  // pode escolher "Salvar como PDF".
+  function printShelves(shelvesArray, revisao, vigencia) {
     var printArea = document.getElementById("printArea");
 
-    var rows = shelf.items.map(function (item) {
-      return "<tr>" +
-        "<td>" + escapeHtml(item.code) + "</td>" +
-        "<td>" + escapeHtml(item.description) + "</td>" +
-        "<td>" + item.quantity + "</td>" +
-      "</tr>";
+    var sectionsHtml = shelvesArray.map(function (shelf, idx) {
+      var rows = shelf.items.map(function (item) {
+        return "<tr>" +
+          "<td>" + escapeHtml(item.code) + "</td>" +
+          "<td>" + escapeHtml(item.description) + "</td>" +
+          "<td>" + item.quantity + "</td>" +
+        "</tr>";
+      }).join("");
+
+      var isLast = idx === shelvesArray.length - 1;
+
+      return '<div class="print-shelf-section"' + (isLast ? '' : ' style="page-break-after: always;"') + '>' +
+        '<table class="print-header-table"><tbody>' +
+          '<tr>' +
+            '<td class="ph-logo" rowspan="2"><img src="data:image/png;base64,' + LOGO_EMPRESA_B64 + '" alt="' + escapeHtml(DOC_INFO.empresa) + '"></td>' +
+            '<td class="ph-title" rowspan="2">' +
+              '<div class="ph-field-label">Assunto/Título</div>' +
+              '<div class="ph-title-text">' + escapeHtml(DOC_INFO.titulo) + '</div>' +
+            '</td>' +
+            '<td class="ph-meta"><div class="ph-field-label">Revisão</div><div class="ph-meta-value">' + escapeHtml(revisao) + '</div></td>' +
+            '<td class="ph-meta"><div class="ph-field-label">Código</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.codigo) + '</div></td>' +
+          '</tr>' +
+          '<tr>' +
+            '<td class="ph-meta"><div class="ph-field-label">Vigência</div><div class="ph-meta-value">' + escapeHtml(vigencia) + '</div></td>' +
+            '<td class="ph-meta"><div class="ph-field-label">Total de páginas</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.totalPaginas) + '</div></td>' +
+          '</tr>' +
+        '</tbody></table>' +
+        '<div class="print-local-row">' +
+          '<div class="print-local"><b class="ph-field-label" style="font-size:11px;">Local:</b> ' + escapeHtml(DOC_INFO.local) + '</div>' +
+          '<div class="print-shelf-badge" style="background:' + shelf.color + '22;border-left:4px solid ' + shelf.color + ';">' +
+            '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>&nbsp;<b>' + escapeHtml(shelf.name) + '</b>' +
+          '</div>' +
+        '</div>' +
+        '<table class="print-items-table">' +
+          '<thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr></thead>' +
+          '<tbody>' + (rows || '<tr><td colspan="3" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
+        '</table>' +
+      '</div>';
     }).join("");
 
-    printArea.innerHTML =
-      '<table class="print-header-table"><tbody>' +
-        '<tr>' +
-          '<td class="ph-logo" rowspan="2"><img src="data:image/png;base64,' + LOGO_EMPRESA_B64 + '" alt="' + escapeHtml(DOC_INFO.empresa) + '"></td>' +
-          '<td class="ph-title" rowspan="2">' +
-            '<div class="ph-field-label">Assunto/Título</div>' +
-            '<div class="ph-title-text">' + escapeHtml(DOC_INFO.titulo) + '</div>' +
-          '</td>' +
-          '<td class="ph-meta"><div class="ph-field-label">Revisão</div><div class="ph-meta-value">' + escapeHtml(revisao) + '</div></td>' +
-          '<td class="ph-meta"><div class="ph-field-label">Código</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.codigo) + '</div></td>' +
-        '</tr>' +
-        '<tr>' +
-          '<td class="ph-meta"><div class="ph-field-label">Vigência</div><div class="ph-meta-value">' + escapeHtml(vigencia) + '</div></td>' +
-          '<td class="ph-meta"><div class="ph-field-label">Total de páginas</div><div class="ph-meta-value">' + escapeHtml(DOC_INFO.totalPaginas) + '</div></td>' +
-        '</tr>' +
-      '</tbody></table>' +
-      '<div class="print-local-row">' +
-        '<div class="print-local"><b class="ph-field-label" style="font-size:11px;">Local:</b> ' + escapeHtml(DOC_INFO.local) + '</div>' +
-        '<div class="print-shelf-badge" style="background:' + shelf.color + '22;border-left:4px solid ' + shelf.color + ';">' +
-          '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>&nbsp;<b>' + escapeHtml(shelf.name) + '</b>' +
-        '</div>' +
-      '</div>' +
-      '<table class="print-items-table">' +
-        '<thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr></thead>' +
-        '<tbody>' + (rows || '<tr><td colspan="3" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
-      '</table>';
+    printArea.innerHTML = sectionsHtml;
 
-    // Só aciona a impressão depois que a imagem da logo terminar de
-    // carregar/decodificar de verdade — mesmo sendo embutida (base64), o
-    // navegador decodifica de forma assíncrona, e imprimir cedo demais
-    // pode gerar um PDF com a logo em branco.
-    var logoImg = printArea.querySelector(".ph-logo img");
+    // Só aciona a impressão depois que TODAS as logos (uma por prateleira)
+    // terminarem de carregar/decodificar de verdade — mesmo sendo embutidas
+    // (base64), o navegador decodifica de forma assíncrona, e imprimir cedo
+    // demais pode gerar um PDF com alguma logo em branco.
+    var logoImgs = printArea.querySelectorAll(".ph-logo img");
     var printed = false;
     function triggerPrint() {
       if (printed) return;
       printed = true;
       window.print();
     }
-    if (logoImg && !logoImg.complete) {
-      logoImg.addEventListener("load", triggerPrint, { once: true });
-      logoImg.addEventListener("error", triggerPrint, { once: true });
-      // salvaguarda: se por algum motivo o evento não disparar, imprime
-      // mesmo assim depois de um instante
-      setTimeout(triggerPrint, 400);
-    } else {
-      triggerPrint();
-    }
+    var pending = 0;
+    logoImgs.forEach(function (img) {
+      if (!img.complete) {
+        pending++;
+        img.addEventListener("load", function () { pending--; if (pending <= 0) triggerPrint(); }, { once: true });
+        img.addEventListener("error", function () { pending--; if (pending <= 0) triggerPrint(); }, { once: true });
+      }
+    });
+    // salvaguarda: se por algum motivo os eventos não dispararem, imprime
+    // mesmo assim depois de um instante
+    setTimeout(triggerPrint, 500);
+    if (pending === 0) triggerPrint();
   }
 
   function moveItem(itemId, fromShelfId, toShelfId) {
