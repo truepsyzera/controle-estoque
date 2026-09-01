@@ -948,7 +948,26 @@
         '<tbody>' + (rows || '<tr><td colspan="3" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
       '</table>';
 
-    window.print();
+    // Só aciona a impressão depois que a imagem da logo terminar de
+    // carregar/decodificar de verdade — mesmo sendo embutida (base64), o
+    // navegador decodifica de forma assíncrona, e imprimir cedo demais
+    // pode gerar um PDF com a logo em branco.
+    var logoImg = printArea.querySelector(".ph-logo img");
+    var printed = false;
+    function triggerPrint() {
+      if (printed) return;
+      printed = true;
+      window.print();
+    }
+    if (logoImg && !logoImg.complete) {
+      logoImg.addEventListener("load", triggerPrint, { once: true });
+      logoImg.addEventListener("error", triggerPrint, { once: true });
+      // salvaguarda: se por algum motivo o evento não disparar, imprime
+      // mesmo assim depois de um instante
+      setTimeout(triggerPrint, 400);
+    } else {
+      triggerPrint();
+    }
   }
 
   function moveItem(itemId, fromShelfId, toShelfId) {
