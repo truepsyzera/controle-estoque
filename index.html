@@ -182,12 +182,16 @@
 
     #printArea .print-local-row { display: flex; border: 1px solid #888; border-top: none; margin-bottom: 18px; }
     #printArea .print-local { flex: 1; padding: 8px 12px; font-size: 12px; border-right: 1px solid #888; display: flex; align-items: center; gap: 6px; }
-    #printArea .print-shelf-badge { padding: 8px 16px; font-size: 13px; font-weight: 700; text-align: center; display: flex; align-items: center; gap: 6px; }
+    #printArea .print-shelf-badge { padding: 8px 16px; font-size: 13px; font-weight: 700; text-align: center; display: flex; align-items: center; gap: 8px; }
+    #printArea .print-shelf-color-box { display: inline-block; padding: 4px 18px; border-radius: 3px; color: #fff; font-weight: 800; letter-spacing: 0.03em; text-shadow: 0 1px 1px rgba(0,0,0,0.25); }
 
     #printArea .print-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     #printArea .print-items-table th, #printArea .print-items-table td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
     #printArea .print-items-table th { background: #eee; }
-    #printArea .print-items-table td:last-child, #printArea .print-items-table th:last-child { text-align: right; width: 90px; }
+    #printArea .print-items-table th:nth-child(3), #printArea .print-items-table td:nth-child(3),
+    #printArea .print-items-table th:nth-child(4), #printArea .print-items-table td:nth-child(4) {
+      text-align: center; width: 70px;
+    }
     #printArea .print-shelf-section { margin-bottom: 28px; }
   }
 
@@ -277,7 +281,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 0.9";
+  var APP_VERSION = "v 1.0";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -299,6 +303,8 @@
     sidebarCompact: false,
     showNewShelf: false,
     newShelfName: "",
+    newShelfLinha: "",
+    newShelfColuna: "",
     newShelfColor: SHELF_COLORS[0].value,
     editingItemId: null,
     dragItemId: null,
@@ -434,6 +440,10 @@
     if (state.showNewShelf) {
       html += '<div class="new-shelf-box">' +
         '<input type="text" id="newShelfNameInput" placeholder="Ex: Prateleira Roxa A5" value="' + escapeHtml(state.newShelfName) + '">' +
+        '<div style="display:flex;gap:6px;">' +
+          '<input type="text" id="newShelfLinhaInput" placeholder="Linha (ex: A)" value="' + escapeHtml(state.newShelfLinha) + '" style="flex:1;">' +
+          '<input type="text" id="newShelfColunaInput" placeholder="Coluna (ex: 4)" value="' + escapeHtml(state.newShelfColuna) + '" style="flex:1;">' +
+        '</div>' +
         '<div class="color-row">' +
         SHELF_COLORS.map(function (c) {
           var sel = c.value === state.newShelfColor ? " selected" : "";
@@ -534,9 +544,20 @@
       nameInput.focus();
       nameInput.addEventListener("input", function (e) { state.newShelfName = e.target.value; });
       nameInput.addEventListener("keydown", function (e) { if (e.key === "Enter") confirmNewShelf(); });
+      var linhaInput = document.getElementById("newShelfLinhaInput");
+      var colunaInput = document.getElementById("newShelfColunaInput");
+      linhaInput.addEventListener("input", function (e) { state.newShelfLinha = e.target.value; });
+      colunaInput.addEventListener("input", function (e) { state.newShelfColuna = e.target.value; });
+      [linhaInput, colunaInput].forEach(function (inp) {
+        inp.addEventListener("keydown", function (e) { if (e.key === "Enter") confirmNewShelf(); });
+      });
       document.getElementById("confirmNewShelf").addEventListener("click", confirmNewShelf);
       document.getElementById("cancelNewShelf").addEventListener("click", function () {
-        state.showNewShelf = false; state.newShelfName = ""; render();
+        state.showNewShelf = false;
+        state.newShelfName = "";
+        state.newShelfLinha = "";
+        state.newShelfColuna = "";
+        render();
       });
       sidebar.querySelectorAll("[data-pick-color]").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -615,10 +636,19 @@
   function confirmNewShelf() {
     var name = (state.newShelfName || "").trim();
     if (!name) return;
-    var shelf = { id: uid(), name: name, color: state.newShelfColor, items: [] };
+    var shelf = {
+      id: uid(),
+      name: name,
+      color: state.newShelfColor,
+      linha: (state.newShelfLinha || "").trim(),
+      coluna: (state.newShelfColuna || "").trim(),
+      items: []
+    };
     state.shelves.push(shelf);
     state.selectedShelfId = shelf.id;
     state.newShelfName = "";
+    state.newShelfLinha = "";
+    state.newShelfColuna = "";
     state.showNewShelf = false;
     saveData();
     render();
@@ -643,6 +673,7 @@
           '<button class="scope-btn' + (scopeAllActive ? " active" : "") + '" data-scope="all">Todas</button>' +
         '</div>' +
         '<button class="btn btn-ghost btn-icon" id="printShelfBtn" title="Gerar PDF da prateleira">🖨 PDF</button>' +
+        '<button class="btn btn-ghost btn-icon" id="editShelfBtn" title="Editar prateleira (nome, cor, linha, coluna)">✎</button>' +
         '<button class="btn btn-ghost btn-icon" style="color:#f87171;" id="deleteShelfBtn" title="Remover prateleira">🗑</button>';
     } else {
       html += '<div style="font-size:13px;color:#78716c;">Nenhuma prateleira selecionada</div>';
@@ -673,6 +704,9 @@
       });
       document.getElementById("printShelfBtn").addEventListener("click", function () {
         openPdfModal([shelf]);
+      });
+      document.getElementById("editShelfBtn").addEventListener("click", function () {
+        openEditShelfModal(shelf);
       });
     }
   }
@@ -1004,6 +1038,29 @@
     });
   }
 
+  // Nome da cor (em maiúsculas) a partir do valor hex, pra mostrar no
+  // cabeçalho do PDF (ex: "ROXO", "VERDE") em vez do nome da prateleira.
+  function getColorName(colorValue) {
+    var found = SHELF_COLORS.find(function (c) { return c.value === colorValue; });
+    return found ? found.name.toUpperCase() : "—";
+  }
+
+  // Agrupa as prateleiras selecionadas por cor, preservando a ordem em que
+  // apareceram. Prateleiras da mesma cor viram uma única seção/tabela
+  // unificada; cores diferentes saem em seções separadas (uma por página).
+  function groupShelvesByColor(shelvesArray) {
+    var groups = [];
+    var indexByColor = {};
+    shelvesArray.forEach(function (shelf) {
+      if (indexByColor[shelf.color] === undefined) {
+        indexByColor[shelf.color] = groups.length;
+        groups.push({ color: shelf.color, shelves: [] });
+      }
+      groups[indexByColor[shelf.color]].shelves.push(shelf);
+    });
+    return groups;
+  }
+
   function todayBR() {
     var d = new Date();
     var dd = String(d.getDate()).padStart(2, "0");
@@ -1012,24 +1069,32 @@
   }
 
   // Monta o cabeçalho no padrão do documento da empresa (logo, Assunto/
-  // Título, Revisão/Código/Vigência/Total de páginas, Local e a etiqueta da
-  // prateleira) seguido da tabela Código/Descrição/Quantidade — repetindo
-  // para cada prateleira da lista, uma atrás da outra, com quebra de página
-  // entre elas — e abre a tela de impressão do navegador, onde o usuário
-  // pode escolher "Salvar como PDF".
+  // Título, Revisão/Código/Vigência/Total de páginas, Local e a etiqueta
+  // "Prateleira" pintada na cor) seguido da tabela Código/Descrição/Linha/
+  // Coluna — uma seção por COR (prateleiras da mesma cor são unificadas
+  // numa tabela só; cores diferentes saem em páginas separadas) — e abre a
+  // tela de impressão do navegador, onde o usuário pode escolher "Salvar
+  // como PDF".
   function printShelves(shelvesArray, revisao, vigencia) {
     var printArea = document.getElementById("printArea");
+    var groups = groupShelvesByColor(shelvesArray);
 
-    var sectionsHtml = shelvesArray.map(function (shelf, idx) {
-      var rows = shelf.items.map(function (item) {
-        return "<tr>" +
-          "<td>" + escapeHtml(item.code) + "</td>" +
-          "<td>" + escapeHtml(item.description) + "</td>" +
-          "<td>" + item.quantity + "</td>" +
-        "</tr>";
-      }).join("");
+    var sectionsHtml = groups.map(function (group, idx) {
+      var rows = [];
+      group.shelves.forEach(function (shelf) {
+        shelf.items.forEach(function (item) {
+          rows.push(
+            "<tr>" +
+              "<td>" + escapeHtml(item.code) + "</td>" +
+              "<td>" + escapeHtml(item.description) + "</td>" +
+              "<td>" + escapeHtml(shelf.linha || "—") + "</td>" +
+              "<td>" + escapeHtml(shelf.coluna || "—") + "</td>" +
+            "</tr>"
+          );
+        });
+      });
 
-      var isLast = idx === shelvesArray.length - 1;
+      var isLast = idx === groups.length - 1;
 
       return '<div class="print-shelf-section"' + (isLast ? '' : ' style="page-break-after: always;"') + '>' +
         '<table class="print-header-table"><tbody>' +
@@ -1049,13 +1114,14 @@
         '</tbody></table>' +
         '<div class="print-local-row">' +
           '<div class="print-local"><b class="ph-field-label" style="font-size:11px;">Local:</b> ' + escapeHtml(DOC_INFO.local) + '</div>' +
-          '<div class="print-shelf-badge" style="background:' + shelf.color + '22;border-left:4px solid ' + shelf.color + ';">' +
-            '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>&nbsp;<b>' + escapeHtml(shelf.name) + '</b>' +
+          '<div class="print-shelf-badge">' +
+            '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>' +
+            '<span class="print-shelf-color-box" style="background:' + group.color + ';">' + getColorName(group.color) + '</span>' +
           '</div>' +
         '</div>' +
         '<table class="print-items-table">' +
-          '<thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr></thead>' +
-          '<tbody>' + (rows || '<tr><td colspan="3" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
+          '<thead><tr><th>Código</th><th>Descrição</th><th>Linha</th><th>Coluna</th></tr></thead>' +
+          '<tbody>' + (rows.join("") || '<tr><td colspan="4" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
         '</table>' +
       '</div>';
     }).join("");
@@ -1109,6 +1175,66 @@
   // Lista as outras prateleiras, cada uma escrita na sua própria cor, pra
   // não confundir prateleiras de nomes parecidos (ex: duas "B1" de cores
   // diferentes). Toque numa delas move o item pra lá.
+  // Edita nome, cor, linha e coluna de uma prateleira já existente (útil
+  // pra preencher Linha/Coluna nas prateleiras cadastradas antes desse
+  // campo existir).
+  function openEditShelfModal(shelf) {
+    var root = document.getElementById("modalRoot");
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay">' +
+        '<div class="modal-box">' +
+          '<div class="modal-title">Editar prateleira</div>' +
+          '<div class="field" style="margin-bottom:10px;">' +
+            '<label>Nome</label>' +
+            '<input type="text" id="editShelfNameInput" value="' + escapeHtml(shelf.name) + '">' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
+            '<div class="field" style="flex:1;"><label>Linha</label><input type="text" id="editShelfLinhaInput" value="' + escapeHtml(shelf.linha || "") + '" placeholder="Ex: A"></div>' +
+            '<div class="field" style="flex:1;"><label>Coluna</label><input type="text" id="editShelfColunaInput" value="' + escapeHtml(shelf.coluna || "") + '" placeholder="Ex: 4"></div>' +
+          '</div>' +
+          '<div class="field" style="margin-bottom:16px;">' +
+            '<label>Cor</label>' +
+            '<div class="color-row">' +
+              SHELF_COLORS.map(function (c) {
+                var sel = c.value === shelf.color ? " selected" : "";
+                return '<button class="color-dot' + sel + '" style="background:' + c.value + '" data-edit-pick-color="' + c.value + '" title="' + c.name + '"></button>';
+              }).join("") +
+            '</div>' +
+          '</div>' +
+          '<div class="modal-actions">' +
+            '<button class="btn btn-ghost" id="editShelfCancel">Cancelar</button>' +
+            '<button class="btn btn-primary" id="editShelfSave">✓ Salvar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    var pickedColor = shelf.color;
+    function close() { root.innerHTML = ""; }
+    document.getElementById("editShelfCancel").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
+      if (e.target.id === "modalOverlay") close();
+    });
+    root.querySelectorAll("[data-edit-pick-color]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        pickedColor = btn.getAttribute("data-edit-pick-color");
+        root.querySelectorAll("[data-edit-pick-color]").forEach(function (b) { b.classList.remove("selected"); });
+        btn.classList.add("selected");
+      });
+    });
+    document.getElementById("editShelfSave").addEventListener("click", function () {
+      var name = document.getElementById("editShelfNameInput").value.trim();
+      if (!name) return;
+      shelf.name = name;
+      shelf.linha = document.getElementById("editShelfLinhaInput").value.trim();
+      shelf.coluna = document.getElementById("editShelfColunaInput").value.trim();
+      shelf.color = pickedColor;
+      saveData();
+      close();
+      render();
+      showToast('Prateleira "' + name + '" atualizada');
+    });
+  }
+
   function openMoveItemModal(item, fromShelfId) {
     var root = document.getElementById("modalRoot");
     var options = state.shelves.filter(function (s) { return s.id !== fromShelfId; });
