@@ -71,6 +71,16 @@
   .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
   .color-dot.selected { border-color: #fafaf9; }
 
+  .color-group { margin-bottom: 2px; border-radius: 8px; }
+  .color-group-header { display: flex; align-items: center; gap: 8px; padding: 8px 8px; border-radius: 8px; cursor: grab; user-select: none; }
+  .color-group-header:hover { background: #1c1917; }
+  .color-group-chevron { font-size: 10px; color: #78716c; width: 10px; flex-shrink: 0; }
+  .color-group-name { font-size: 12px; font-weight: 700; color: #d6d3d1; text-transform: uppercase; letter-spacing: 0.03em; flex: 1; }
+  .color-group-count { font-size: 10px; color: #78716c; }
+  .color-group-body { display: flex; flex-direction: column; gap: 2px; padding-left: 14px; margin-top: 2px; margin-bottom: 4px; }
+  .sidebar.compact .color-group-header { justify-content: center; padding: 6px 2px; }
+  .sidebar.compact .color-group-body { padding-left: 0; }
+
   .shelf-row-wrap { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
   .shelf-reorder-btns { display: flex; flex-direction: column; flex-shrink: 0; }
   .shelf-reorder-btn { background: transparent; border: none; color: #57534e; cursor: pointer; padding: 0 3px; font-size: 8px; line-height: 1.4; }
@@ -286,7 +296,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.1";
+  var APP_VERSION = "v 1.2";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -315,6 +325,9 @@
     dragItemId: null,
     dragFromShelfId: null,
     dragShelfId: null,
+    dragGroupColor: null,
+    colorGroupOrder: [],
+    colorGroupCollapsed: {},
     pdfMeta: { revisao: "000", vigencia: "" },
     lastBackupAt: null,
     printSelection: {}
@@ -336,6 +349,8 @@
           state.pdfMeta.vigencia = parsed.pdfMeta.vigencia || state.pdfMeta.vigencia;
         }
         state.lastBackupAt = parsed.lastBackupAt || null;
+        state.colorGroupOrder = parsed.colorGroupOrder || [];
+        state.colorGroupCollapsed = parsed.colorGroupCollapsed || {};
       }
     } catch (e) {
       console.error("Erro ao carregar dados", e);
@@ -344,7 +359,13 @@
 
   function saveData() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ shelves: state.shelves, pdfMeta: state.pdfMeta, lastBackupAt: state.lastBackupAt }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        shelves: state.shelves,
+        pdfMeta: state.pdfMeta,
+        lastBackupAt: state.lastBackupAt,
+        colorGroupOrder: state.colorGroupOrder,
+        colorGroupCollapsed: state.colorGroupCollapsed
+      }));
     } catch (e) {
       showToast("Não consegui salvar (armazenamento cheio ou bloqueado).");
     }
@@ -412,29 +433,55 @@
     html += '<button class="sidebar-compact-toggle" id="toggleCompact" title="' +
       (compact ? "Expandir prateleiras" : "Recolher prateleiras") + '">' + (compact ? "»" : "«") + '</button>';
 
-    state.shelves.forEach(function (shelf, idx) {
-      var activeClass = shelf.id === state.selectedShelfId ? " active" : "";
-      var isFirst = idx === 0;
-      var isLast = idx === state.shelves.length - 1;
-      var checked = state.printSelection[shelf.id] ? " checked" : "";
-      html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '" draggable="true">' +
-        (compact ? '' :
-          '<div class="shelf-reorder-btns">' +
-            '<button class="shelf-reorder-btn" data-move-shelf-up="' + shelf.id + '" ' + (isFirst ? "disabled" : "") + ' title="Mover para cima">▲</button>' +
-            '<button class="shelf-reorder-btn" data-move-shelf-down="' + shelf.id + '" ' + (isLast ? "disabled" : "") + ' title="Mover para baixo">▼</button>' +
-          '</div>'
-        ) +
-        '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '" style="flex:1;" title="' + escapeHtml(shelf.name) + '">' +
-          '<span class="shelf-dot" style="background:' + shelf.color + '"></span>' +
-          '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
-          (compact ? '' : '<span class="shelf-count mono">' + shelf.items.length + '</span>') +
-        '</button>' +
-        (compact ? '' :
-          '<label class="shelf-check-wrap" title="Selecionar para imprimir junto">' +
-            '<input type="checkbox" class="shelf-check" data-check-shelf="' + shelf.id + '"' + checked + '>' +
-          '</label>'
-        ) +
-      '</div>';
+    ensureColorGroupOrder();
+
+    var usedColors = {};
+    state.shelves.forEach(function (s) { usedColors[s.color] = true; });
+    var displayColors = state.colorGroupOrder.filter(function (c) { return usedColors[c]; });
+
+    displayColors.forEach(function (color) {
+      var shelvesInGroup = state.shelves.filter(function (s) { return s.color === color; });
+      var collapsed = !!state.colorGroupCollapsed[color];
+      var colorInfo = SHELF_COLORS.find(function (c) { return c.value === color; });
+      var colorLabel = colorInfo ? colorInfo.name : "Cor";
+
+      html += '<div class="color-group" data-group-color="' + color + '">' +
+        '<div class="color-group-header" draggable="true" data-group-header="' + color + '" data-toggle-group="' + color + '">' +
+          '<span class="color-group-chevron">' + (collapsed ? "▸" : "▾") + '</span>' +
+          '<span class="shelf-dot" style="background:' + color + '"></span>' +
+          (compact ? '' : '<span class="color-group-name">' + escapeHtml(colorLabel) + '</span>') +
+          (compact ? '' : '<span class="color-group-count mono">' + shelvesInGroup.length + '</span>') +
+        '</div>';
+
+      if (!collapsed) {
+        html += '<div class="color-group-body">';
+        shelvesInGroup.forEach(function (shelf, idxInGroup) {
+          var activeClass = shelf.id === state.selectedShelfId ? " active" : "";
+          var isFirst = idxInGroup === 0;
+          var isLast = idxInGroup === shelvesInGroup.length - 1;
+          var checked = state.printSelection[shelf.id] ? " checked" : "";
+          html += '<div class="shelf-drop-wrap shelf-row-wrap" data-shelf-drop="' + shelf.id + '" data-shelf-color="' + shelf.color + '" draggable="true">' +
+            (compact ? '' :
+              '<div class="shelf-reorder-btns">' +
+                '<button class="shelf-reorder-btn" data-move-shelf-up="' + shelf.id + '" ' + (isFirst ? "disabled" : "") + ' title="Mover para cima">▲</button>' +
+                '<button class="shelf-reorder-btn" data-move-shelf-down="' + shelf.id + '" ' + (isLast ? "disabled" : "") + ' title="Mover para baixo">▼</button>' +
+              '</div>'
+            ) +
+            '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '" style="flex:1;" title="' + escapeHtml(shelf.name) + '">' +
+              '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
+              (compact ? '' : '<span class="shelf-count mono">' + shelf.items.length + '</span>') +
+            '</button>' +
+            (compact ? '' :
+              '<label class="shelf-check-wrap" title="Selecionar para imprimir junto">' +
+                '<input type="checkbox" class="shelf-check" data-check-shelf="' + shelf.id + '"' + checked + '>' +
+              '</label>'
+            ) +
+          '</div>';
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
     });
 
     html += '<div class="print-selection-bar" id="printSelectionBar" style="display:none;">' +
@@ -471,6 +518,45 @@
     document.getElementById("toggleCompact").addEventListener("click", function () {
       state.sidebarCompact = !state.sidebarCompact;
       renderSidebar();
+    });
+
+    // Bind: expandir/recolher grupo de cor
+    sidebar.querySelectorAll("[data-toggle-group]").forEach(function (header) {
+      header.addEventListener("click", function () {
+        var color = header.getAttribute("data-toggle-group");
+        state.colorGroupCollapsed[color] = !state.colorGroupCollapsed[color];
+        saveData();
+        renderSidebar();
+      });
+    });
+
+    // Bind: arrastar o cabeçalho do grupo pra reordenar os grupos de cor
+    sidebar.querySelectorAll("[data-group-header]").forEach(function (header) {
+      header.addEventListener("dragstart", function (e) {
+        state.dragGroupColor = header.getAttribute("data-group-header");
+        e.stopPropagation();
+      });
+      header.addEventListener("dragend", function () {
+        state.dragGroupColor = null;
+      });
+      header.addEventListener("dragover", function (e) {
+        if (state.dragGroupColor) {
+          e.preventDefault();
+          header.parentElement.classList.add("shelf-drop-target");
+        }
+      });
+      header.addEventListener("dragleave", function () {
+        header.parentElement.classList.remove("shelf-drop-target");
+      });
+      header.addEventListener("drop", function (e) {
+        header.parentElement.classList.remove("shelf-drop-target");
+        if (!state.dragGroupColor) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var targetColor = header.getAttribute("data-group-header");
+        reorderColorGroup(state.dragGroupColor, targetColor);
+        state.dragGroupColor = null;
+      });
     });
 
     // Bind events
@@ -525,6 +611,13 @@
         wrap.classList.remove("dragging");
       });
       wrap.addEventListener("dragover", function (e) {
+        // Só aceita soltar aqui se for outra prateleira da MESMA cor
+        // (reordenar) ou um item sendo movido pra esta prateleira — nunca
+        // uma prateleira de cor diferente.
+        if (state.dragShelfId) {
+          var draggedShelf = state.shelves.find(function (s) { return s.id === state.dragShelfId; });
+          if (!draggedShelf || draggedShelf.color !== wrap.getAttribute("data-shelf-color")) return;
+        }
         e.preventDefault();
         wrap.classList.add("shelf-drop-target");
       });
@@ -536,7 +629,11 @@
         wrap.classList.remove("shelf-drop-target");
         var toShelfId = wrap.getAttribute("data-shelf-drop");
         if (state.dragShelfId) {
-          reorderShelf(state.dragShelfId, toShelfId);
+          var draggedShelf = state.shelves.find(function (s) { return s.id === state.dragShelfId; });
+          var targetShelf = state.shelves.find(function (s) { return s.id === toShelfId; });
+          if (draggedShelf && targetShelf && draggedShelf.color === targetShelf.color) {
+            reorderShelf(state.dragShelfId, toShelfId);
+          }
           state.dragShelfId = null;
         } else if (state.dragItemId && state.dragFromShelfId) {
           moveItem(state.dragItemId, state.dragFromShelfId, toShelfId);
@@ -580,31 +677,69 @@
   }
 
   // Reordena as prateleiras: tira a prateleira arrastada do lugar e insere
-  // na posição de destino (soltar em cima de outra prateleira).
+  // na posição de destino (soltar em cima de outra prateleira). Só permite
+  // dentro da mesma cor — reordenar entre grupos de cor diferentes usa o
+  // cabeçalho do grupo, não a prateleira em si.
   function reorderShelf(draggedId, targetId) {
     if (draggedId === targetId) return;
     var shelves = state.shelves;
-    var fromIdx = shelves.findIndex(function (s) { return s.id === draggedId; });
-    if (fromIdx === -1) return;
-    var moved = shelves.splice(fromIdx, 1)[0];
-    var toIdx = shelves.findIndex(function (s) { return s.id === targetId; });
+    var dragged = shelves.find(function (s) { return s.id === draggedId; });
+    var target = shelves.find(function (s) { return s.id === targetId; });
+    if (!dragged || !target || dragged.color !== target.color) return;
+    var fromIdx = shelves.indexOf(dragged);
+    shelves.splice(fromIdx, 1);
+    var toIdx = shelves.indexOf(target);
     if (toIdx === -1) toIdx = shelves.length;
-    shelves.splice(toIdx, 0, moved);
+    shelves.splice(toIdx, 0, dragged);
     saveData();
     renderSidebar();
   }
 
-  // Move uma prateleira uma posição pra cima (-1) ou pra baixo (+1) na lista
-  // — alternativa confiável no toque, onde arrastar nem sempre funciona bem.
+  // Move uma prateleira uma posição pra cima (-1) ou pra baixo (+1) DENTRO
+  // do seu grupo de cor — alternativa confiável no toque, onde arrastar nem
+  // sempre funciona bem.
   function moveShelfStep(shelfId, direction) {
-    var shelves = state.shelves;
-    var idx = shelves.findIndex(function (s) { return s.id === shelfId; });
-    if (idx === -1) return;
-    var newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= shelves.length) return;
-    var tmp = shelves[idx];
-    shelves[idx] = shelves[newIdx];
-    shelves[newIdx] = tmp;
+    var shelf = state.shelves.find(function (s) { return s.id === shelfId; });
+    if (!shelf) return;
+    var group = state.shelves.filter(function (s) { return s.color === shelf.color; });
+    var idxInGroup = group.indexOf(shelf);
+    var newIdxInGroup = idxInGroup + direction;
+    if (newIdxInGroup < 0 || newIdxInGroup >= group.length) return;
+    var other = group[newIdxInGroup];
+    var realIdxA = state.shelves.indexOf(shelf);
+    var realIdxB = state.shelves.indexOf(other);
+    state.shelves[realIdxA] = other;
+    state.shelves[realIdxB] = shelf;
+    saveData();
+    renderSidebar();
+  }
+
+  // Garante que toda cor em uso já tenha uma posição definida na ordem dos
+  // grupos (novas cores entram no final automaticamente).
+  function ensureColorGroupOrder() {
+    var used = {};
+    state.shelves.forEach(function (s) { used[s.color] = true; });
+    var changed = false;
+    Object.keys(used).forEach(function (color) {
+      if (state.colorGroupOrder.indexOf(color) === -1) {
+        state.colorGroupOrder.push(color);
+        changed = true;
+      }
+    });
+    if (changed) saveData();
+  }
+
+  // Reordena os GRUPOS de cor (arrastando o cabeçalho de um grupo pra cima
+  // de outro) — a ordem fica salva do jeito que o usuário deixar.
+  function reorderColorGroup(draggedColor, targetColor) {
+    if (draggedColor === targetColor) return;
+    var order = state.colorGroupOrder;
+    var fromIdx = order.indexOf(draggedColor);
+    if (fromIdx === -1) return;
+    order.splice(fromIdx, 1);
+    var toIdx = order.indexOf(targetColor);
+    if (toIdx === -1) toIdx = order.length;
+    order.splice(toIdx, 0, draggedColor);
     saveData();
     renderSidebar();
   }
