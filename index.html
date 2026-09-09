@@ -297,7 +297,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.3";
+  var APP_VERSION = "v 1.4";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -1439,15 +1439,22 @@
   // Export / Import backup
   // Monta o arquivo de backup (mesmo conteúdo usado tanto pra baixar quanto
   // pra compartilhar).
-  function buildBackupFile() {
+  function buildBackupFile(forShare) {
     var data = JSON.stringify({ shelves: state.shelves }, null, 2);
     var date = new Date().toISOString().slice(0, 10);
-    var filename = "backup-estoque-" + date + ".json";
-    return new File([data], filename, { type: "application/json" });
+    if (forShare) {
+      // Vários apps/Android restringem quais tipos de arquivo podem ser
+      // compartilhados via Web Share API, e .json costuma ser recusado
+      // mesmo passando na checagem inicial. .txt é aceito de forma bem
+      // mais confiável — a importação lê o conteúdo, não a extensão, então
+      // isso não muda nada na hora de restaurar o backup.
+      return new File([data], "backup-estoque-" + date + ".txt", { type: "text/plain" });
+    }
+    return new File([data], "backup-estoque-" + date + ".json", { type: "application/json" });
   }
 
   document.getElementById("shareBtn").addEventListener("click", async function () {
-    var file = buildBackupFile();
+    var file = buildBackupFile(true);
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
@@ -1461,7 +1468,7 @@
       } catch (err) {
         // usuário cancelou a folha de compartilhamento — não precisa avisar nada
         if (err && err.name !== "AbortError") {
-          showToast("Não consegui abrir o compartilhamento.");
+          showToast("Não consegui abrir o compartilhamento" + (err && err.name ? " (" + err.name + ")" : "") + ".");
         }
       }
     } else {
