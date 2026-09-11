@@ -297,7 +297,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.4";
+  var APP_VERSION = "v 1.5";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -329,7 +329,7 @@
     dragGroupColor: null,
     colorGroupOrder: [],
     colorGroupCollapsed: {},
-    pdfMeta: { revisao: "000", vigencia: "" },
+    pdfMeta: { revisao: "000", vigencia: "", formato: "linha_coluna" },
     lastBackupAt: null,
     printSelection: {}
   };
@@ -348,6 +348,7 @@
         if (parsed.pdfMeta) {
           state.pdfMeta.revisao = parsed.pdfMeta.revisao || state.pdfMeta.revisao;
           state.pdfMeta.vigencia = parsed.pdfMeta.vigencia || state.pdfMeta.vigencia;
+          state.pdfMeta.formato = parsed.pdfMeta.formato || state.pdfMeta.formato;
         }
         state.lastBackupAt = parsed.lastBackupAt || null;
         state.colorGroupOrder = parsed.colorGroupOrder || [];
@@ -1143,11 +1144,20 @@
       ? "Confirme os dados desta versão do documento."
       : "Vai gerar um único PDF com: " + shelvesArray.map(function (s) { return escapeHtml(s.name); }).join(", ") + ".";
 
+    var formatoAtual = state.pdfMeta.formato || "linha_coluna";
+
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
         '<div class="modal-box">' +
           '<div class="modal-title">' + titleText + '</div>' +
           '<div class="modal-text">' + descText + '</div>' +
+          '<div class="field" style="margin-bottom:10px;">' +
+            '<label>Formato da tabela</label>' +
+            '<div class="scope-toggle" style="width:100%;">' +
+              '<button class="scope-btn' + (formatoAtual === "linha_coluna" ? " active" : "") + '" style="flex:1;" data-pdf-formato="linha_coluna">Linha/Coluna</button>' +
+              '<button class="scope-btn' + (formatoAtual === "quantidade" ? " active" : "") + '" style="flex:1;" data-pdf-formato="quantidade">Quantidade</button>' +
+            '</div>' +
+          '</div>' +
           '<div class="field" style="margin-bottom:10px;">' +
             '<label>Revisão</label>' +
             '<input type="text" id="pdfRevisaoInput" value="' + escapeHtml(state.pdfMeta.revisao) + '">' +
@@ -1163,6 +1173,14 @@
         '</div>' +
       '</div>';
 
+    root.querySelectorAll("[data-pdf-formato]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        formatoAtual = btn.getAttribute("data-pdf-formato");
+        root.querySelectorAll("[data-pdf-formato]").forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+      });
+    });
+
     function close() { root.innerHTML = ""; }
     document.getElementById("pdfModalCancel").addEventListener("click", close);
     document.getElementById("modalOverlay").addEventListener("click", function (e) {
@@ -1173,9 +1191,10 @@
       var vigencia = document.getElementById("pdfVigenciaInput").value.trim() || vigenciaDefault;
       state.pdfMeta.revisao = revisao;
       state.pdfMeta.vigencia = vigencia;
+      state.pdfMeta.formato = formatoAtual;
       saveData();
       close();
-      printShelves(shelvesArray, revisao, vigencia);
+      printShelves(shelvesArray, revisao, vigencia, formatoAtual);
     });
   }
 
@@ -1216,9 +1235,10 @@
   // numa tabela só; cores diferentes saem em páginas separadas) — e abre a
   // tela de impressão do navegador, onde o usuário pode escolher "Salvar
   // como PDF".
-  function printShelves(shelvesArray, revisao, vigencia) {
+  function printShelves(shelvesArray, revisao, vigencia, formato) {
     var printArea = document.getElementById("printArea");
     var groups = groupShelvesByColor(shelvesArray);
+    var usaQuantidade = formato === "quantidade";
 
     var sectionsHtml = groups.map(function (group, idx) {
       var rows = [];
@@ -1228,14 +1248,20 @@
             "<tr>" +
               "<td>" + escapeHtml(item.code) + "</td>" +
               "<td>" + escapeHtml(item.description) + "</td>" +
-              "<td>" + escapeHtml(shelf.linha || "—") + "</td>" +
-              "<td>" + escapeHtml(shelf.coluna || "—") + "</td>" +
+              (usaQuantidade
+                ? "<td>" + item.quantity + "</td>"
+                : "<td>" + escapeHtml(shelf.linha || "—") + "</td>" +
+                  "<td>" + escapeHtml(shelf.coluna || "—") + "</td>") +
             "</tr>"
           );
         });
       });
 
       var isLast = idx === groups.length - 1;
+      var colCount = usaQuantidade ? 3 : 4;
+      var headerCols = usaQuantidade
+        ? "<th>Código</th><th>Descrição</th><th>Quantidade</th>"
+        : "<th>Código</th><th>Descrição</th><th>Linha</th><th>Coluna</th>";
 
       return '<div class="print-shelf-section"' + (isLast ? '' : ' style="page-break-after: always;"') + '>' +
         '<table class="print-header-table"><tbody>' +
@@ -1261,8 +1287,8 @@
           '</div>' +
         '</div>' +
         '<table class="print-items-table">' +
-          '<thead><tr><th>Código</th><th>Descrição</th><th>Linha</th><th>Coluna</th></tr></thead>' +
-          '<tbody>' + (rows.join("") || '<tr><td colspan="4" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
+          '<thead><tr>' + headerCols + '</tr></thead>' +
+          '<tbody>' + (rows.join("") || '<tr><td colspan="' + colCount + '" style="text-align:center;color:#666;">Nenhum item nesta prateleira.</td></tr>') + '</tbody>' +
         '</table>' +
       '</div>';
     }).join("");
