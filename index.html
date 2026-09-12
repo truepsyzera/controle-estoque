@@ -43,6 +43,10 @@
   .brand-sub { font-size: 11px; color: #78716c; }
   .backup-reminder { font-size: 10.5px; color: #57534e; margin-top: 1px; }
   .backup-reminder.backup-warn { color: #f59e0b; font-weight: 600; }
+  .expiry-badges { display: flex; gap: 6px; margin-top: 3px; }
+  .expiry-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; cursor: pointer; border: none; }
+  .expiry-badge.warn-yellow { background: rgba(234,179,8,0.15); color: #eab308; }
+  .expiry-badge.warn-red { background: rgba(239,68,68,0.15); color: #ef4444; }
   .header-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
   .layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
@@ -133,13 +137,15 @@
   .item-code::-webkit-scrollbar { display: none; }
   .item-desc-wrap { flex: 1; min-width: 60px; overflow: hidden; }
   .item-desc { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; touch-action: pan-x; cursor: grab; }
+  .item-desc.desc-expiring { color: #eab308; font-weight: 700; }
+  .item-desc.desc-expiring-soon { color: #ef4444; font-weight: 800; }
   .item-desc::-webkit-scrollbar { display: none; }
   .dragging-text { cursor: grabbing !important; }
   .qty-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .qty-btn { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #44403c; background: transparent; color: #e7e5e4; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .qty-val-wrap { flex-shrink: 0; width: 40px; overflow: hidden; }
   .qty-val { font-size: 13px; color: #fafaf9; text-align: center; font-weight: 600; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; cursor: grab; touch-action: pan-x; }
-  .qty-val.qty-low { color: #ef4444; font-weight: 800; }
+  .qty-val.qty-low { color: #f97316; font-weight: 800; }
   .qty-val::-webkit-scrollbar { display: none; }
 
   .edit-row input { width: auto; }
@@ -153,6 +159,19 @@
   .modal-text { font-size: 13px; color: #a8a29e; margin-bottom: 16px; line-height: 1.4; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
   .move-target-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+  .expiry-list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
+  .expiry-list-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 6px; border-bottom: 1px solid #1c1917; font-size: 13px; }
+  .expiry-list-desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .expiry-list-date { color: #a8a29e; flex-shrink: 0; }
+  .history-list { display: flex; flex-direction: column; gap: 2px; max-height: 340px; overflow-y: auto; }
+  .history-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 6px; border-bottom: 1px solid #1c1917; }
+  .history-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+  .history-icon.history-added { background: rgba(21,184,201,0.15); color: #15b8c9; }
+  .history-icon.history-removed { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .history-info { flex: 1; min-width: 0; }
+  .history-desc { font-size: 13px; color: #e7e5e4; }
+  .history-shelf { color: #78716c; }
+  .history-meta { font-size: 10.5px; color: #78716c; margin-top: 1px; }
   .move-target-btn { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 8px; border: 1px solid #292524; background: #0c0a09; cursor: pointer; font-size: 13px; text-align: left; }
   .move-target-btn:hover, .move-target-btn:active { background: #1c1917; }
 
@@ -198,7 +217,7 @@
     #printArea .print-local-row { display: flex; border: 1px solid #888; border-top: none; margin-bottom: 18px; }
     #printArea .print-local { flex: 1; padding: 8px 12px; font-size: 12px; border-right: 1px solid #888; display: flex; align-items: center; gap: 6px; }
     #printArea .print-shelf-badge { padding: 8px 16px; font-size: 13px; font-weight: 700; text-align: center; display: flex; align-items: center; gap: 8px; }
-    #printArea .print-shelf-color-box { display: inline-block; padding: 4px 18px; border-radius: 3px; color: #fff; font-weight: 800; letter-spacing: 0.03em; text-shadow: 0 1px 1px rgba(0,0,0,0.25); }
+    #printArea .print-shelf-color-box { display: inline-block; padding: 4px 18px; border-radius: 3px; font-weight: 800; letter-spacing: 0.03em; }
 
     #printArea .print-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     #printArea .print-items-table th, #printArea .print-items-table td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
@@ -247,8 +266,10 @@
     </div>
     <div class="brand-sub mono" id="headerStats">0 prateleiras · 0 itens · 0 unid.</div>
     <div class="backup-reminder mono" id="backupReminder"></div>
+    <div class="expiry-badges" id="expiryBadges"></div>
   </div>
   <div class="header-actions">
+    <button class="btn btn-ghost btn-icon" id="historyBtn" title="Histórico de movimentação (mês atual)">🕒 Histórico</button>
     <button class="btn btn-ghost btn-icon" id="shareBtn" title="Compartilhar backup (WhatsApp, e-mail, etc.)">📤 Compartilhar</button>
     <button class="btn btn-ghost btn-icon" id="exportBtn" title="Exportar backup (.json)">⬇ Backup</button>
     <button class="btn btn-ghost btn-icon" id="importBtn" title="Importar backup (.json)">⬆ Importar</button>
@@ -284,8 +305,27 @@
     { name: "Verde", value: "#16a34a" },
     { name: "Azul", value: "#2563eb" },
     { name: "Rosa", value: "#db2777" },
-    { name: "Cinza", value: "#525252" }
+    { name: "Cinza", value: "#525252" },
+    { name: "Vermelho", value: "#dc2626" },
+    { name: "Amarelo", value: "#eab308" },
+    { name: "Laranja", value: "#ea580c" },
+    { name: "Ciano", value: "#0891b2" },
+    { name: "Marrom", value: "#78350f" },
+    { name: "Preto", value: "#18181b" },
+    { name: "Lima", value: "#65a30d" },
+    { name: "Magenta", value: "#c026d3" }
   ];
+
+  // Escolhe texto preto ou branco pro selo colorido do PDF, conforme o
+  // brilho da cor de fundo — necessário agora que a paleta inclui cores
+  // claras (Amarelo, Lima) onde texto branco fixo ficaria ilegível.
+  function getContrastTextColor(hex) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? "#111111" : "#ffffff";
+  }
 
   // Dados fixos do documento da empresa (POP 085), usados no cabeçalho do
   // PDF gerado. Revisão e Vigência mudam a cada geração — ver state.pdfMeta.
@@ -297,7 +337,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.5";
+  var APP_VERSION = "v 1.6";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -329,6 +369,7 @@
     dragGroupColor: null,
     colorGroupOrder: [],
     colorGroupCollapsed: {},
+    history: [],
     pdfMeta: { revisao: "000", vigencia: "", formato: "linha_coluna" },
     lastBackupAt: null,
     printSelection: {}
@@ -353,10 +394,12 @@
         state.lastBackupAt = parsed.lastBackupAt || null;
         state.colorGroupOrder = parsed.colorGroupOrder || [];
         state.colorGroupCollapsed = parsed.colorGroupCollapsed || {};
+        state.history = parsed.history || [];
       }
     } catch (e) {
       console.error("Erro ao carregar dados", e);
     }
+    pruneOldHistory();
   }
 
   function saveData() {
@@ -366,11 +409,79 @@
         pdfMeta: state.pdfMeta,
         lastBackupAt: state.lastBackupAt,
         colorGroupOrder: state.colorGroupOrder,
-        colorGroupCollapsed: state.colorGroupCollapsed
+        colorGroupCollapsed: state.colorGroupCollapsed,
+        history: state.history
       }));
     } catch (e) {
       showToast("Não consegui salvar (armazenamento cheio ou bloqueado).");
     }
+  }
+
+  // O histórico só guarda o mês atual — assim que o mês vira, tudo do mês
+  // anterior é descartado.
+  function pruneOldHistory() {
+    var now = new Date();
+    var curM = now.getMonth(), curY = now.getFullYear();
+    var before = state.history.length;
+    state.history = state.history.filter(function (h) {
+      var d = new Date(h.timestamp);
+      return d.getMonth() === curM && d.getFullYear() === curY;
+    });
+    if (state.history.length !== before) saveData();
+  }
+
+  function logHistory(type, item, shelf) {
+    state.history.push({
+      type: type,
+      code: item.code,
+      description: item.description,
+      shelfName: shelf ? shelf.name : "",
+      timestamp: Date.now()
+    });
+  }
+
+  // Mostra o histórico do mês atual (adicionados/removidos) — reseta
+  // sozinho assim que o mês vira (ver pruneOldHistory).
+  function openHistoryModal() {
+    pruneOldHistory();
+    var root = document.getElementById("modalRoot");
+    var entries = state.history.slice().sort(function (a, b) { return b.timestamp - a.timestamp; });
+
+    var monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    var now = new Date();
+    var monthLabel = monthNames[now.getMonth()] + " de " + now.getFullYear();
+
+    var rows = entries.map(function (h) {
+      var d = new Date(h.timestamp);
+      var dateStr = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " +
+        String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      var isAdded = h.type === "added";
+      return '<div class="history-row">' +
+        '<span class="history-icon ' + (isAdded ? "history-added" : "history-removed") + '">' + (isAdded ? "+" : "−") + '</span>' +
+        '<div class="history-info">' +
+          '<div class="history-desc">' + escapeHtml(h.description) + (h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '') + '</div>' +
+          '<div class="history-meta mono">' + (isAdded ? "Adicionado" : "Removido") + " em " + dateStr + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay">' +
+        '<div class="modal-box" style="max-width:380px;">' +
+          '<div class="modal-title">Histórico — ' + monthLabel + '</div>' +
+          '<div class="modal-text">Reseta automaticamente no início de cada mês.</div>' +
+          '<div class="history-list">' + (rows || '<div class="modal-text">Nenhuma movimentação neste mês ainda.</div>') + '</div>' +
+          '<div class="modal-actions" style="margin-top:12px;">' +
+            '<button class="btn btn-ghost" id="historyModalClose">Fechar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("historyModalClose").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
+      if (e.target.id === "modalOverlay") close();
+    });
   }
 
   var toastTimer = null;
@@ -397,6 +508,7 @@
 
   function render() {
     renderHeaderStats();
+    renderExpiryBadges();
     renderSidebar();
     renderToolbar();
     renderAddItemForm();
@@ -424,6 +536,71 @@
       reminder.textContent = (days >= 7 ? "⚠ " : "") + "Último backup: " + label;
       reminder.className = "backup-reminder mono" + (days >= 7 ? " backup-warn" : "");
     }
+  }
+
+  // Calcula quantos itens estão a vencer (0-30 dias) e quantos já venceram,
+  // olhando todas as prateleiras, e mostra dois avisos clicáveis no
+  // cabeçalho (só aparecem quando há pelo menos 1 item na categoria).
+  function renderExpiryBadges() {
+    var el = document.getElementById("expiryBadges");
+    var vencendo = [];
+    var vencidos = [];
+    state.shelves.forEach(function (shelf) {
+      shelf.items.forEach(function (item) {
+        var d = parseBRDate(item.validade);
+        if (!d) return;
+        var days = daysUntil(d);
+        var entry = { description: item.description, validade: item.validade, days: days };
+        if (days < 0) vencidos.push(entry);
+        else if (days <= 30) vencendo.push(entry);
+      });
+    });
+    vencendo.sort(function (a, b) { return a.days - b.days; });
+    vencidos.sort(function (a, b) { return a.days - b.days; });
+
+    var html = "";
+    if (vencendo.length > 0) {
+      html += '<button class="expiry-badge warn-yellow" id="badgeVencendo">A vencer: ' + vencendo.length + (vencendo.length === 1 ? " item" : " itens") + '</button>';
+    }
+    if (vencidos.length > 0) {
+      html += '<button class="expiry-badge warn-red" id="badgeVencidos">Vencidos: ' + vencidos.length + (vencidos.length === 1 ? " item" : " itens") + '</button>';
+    }
+    el.innerHTML = html;
+
+    if (vencendo.length > 0) {
+      document.getElementById("badgeVencendo").addEventListener("click", function () {
+        openExpiryListModal("A vencer (próximos 30 dias)", vencendo);
+      });
+    }
+    if (vencidos.length > 0) {
+      document.getElementById("badgeVencidos").addEventListener("click", function () {
+        openExpiryListModal("Itens vencidos", vencidos);
+      });
+    }
+  }
+
+  function openExpiryListModal(title, entries) {
+    var root = document.getElementById("modalRoot");
+    var rows = entries.map(function (e) {
+      return '<div class="expiry-list-row"><span class="expiry-list-desc">' + escapeHtml(e.description) + '</span><span class="expiry-list-date mono">' + escapeHtml(e.validade) + '</span></div>';
+    }).join("");
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay">' +
+        '<div class="modal-box" style="max-width:360px;">' +
+          '<div class="modal-title">' + escapeHtml(title) + '</div>' +
+          '<div class="expiry-list">' + (rows || '<div class="modal-text">Nenhum item.</div>') + '</div>' +
+          '<div class="modal-actions" style="margin-top:12px;">' +
+            '<button class="btn btn-ghost" id="expiryModalClose">Fechar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("expiryModalClose").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
+      if (e.target.id === "modalOverlay") close();
+    });
   }
 
   function renderSidebar() {
@@ -862,6 +1039,7 @@
       '<div class="add-item-form">' +
         '<div class="field" style="width:100px;"><label>Código</label><input type="text" id="itemCodeInput" placeholder="Ex: 0231" class="mono"></div>' +
         '<div class="field" style="flex:1;min-width:160px;"><label>Descrição</label><input type="text" id="itemDescInput" placeholder="Ex: Máscara colágeno"></div>' +
+        '<div class="field" style="width:110px;"><label>Validade</label><input type="text" id="itemValidadeInput" placeholder="dd/mm/aaaa" class="mono"></div>' +
         '<div class="field" style="width:80px;"><label>Qtd.</label><input type="number" id="itemQtyInput" placeholder="0" class="mono"></div>' +
         '<button class="btn btn-primary" id="addItemBtn">+ Adicionar</button>' +
       '</div>';
@@ -869,29 +1047,40 @@
     var descInput = document.getElementById("itemDescInput");
     var qtyInput = document.getElementById("itemQtyInput");
     var codeInput = document.getElementById("itemCodeInput");
+    var validadeInput = document.getElementById("itemValidadeInput");
 
     function submit() {
       var description = descInput.value.trim();
       if (!description) { descInput.focus(); return; }
       var code = codeInput.value.trim();
       var quantity = parseInt(qtyInput.value, 10);
-      shelf.items.push({
+      var validade = validadeInput.value.trim();
+      if (validade && !parseBRDate(validade)) {
+        showToast("Data de validade inválida — use dd/mm/aaaa");
+        validadeInput.focus();
+        return;
+      }
+      var newItem = {
         id: uid(),
         code: code || "—",
         description: description,
-        quantity: isFinite(quantity) ? quantity : 0
-      });
+        quantity: isFinite(quantity) ? quantity : 0,
+        validade: validade
+      };
+      shelf.items.push(newItem);
+      logHistory("added", newItem, shelf);
       saveData();
-      codeInput.value = ""; descInput.value = ""; qtyInput.value = "";
+      codeInput.value = ""; descInput.value = ""; qtyInput.value = ""; validadeInput.value = "";
       descInput.focus();
       renderHeaderStats();
+      renderExpiryBadges();
       renderSidebar();
       renderItemsList();
       showToast('Item "' + description + '" adicionado');
     }
 
     document.getElementById("addItemBtn").addEventListener("click", submit);
-    [codeInput, descInput, qtyInput].forEach(function (inp) {
+    [codeInput, descInput, validadeInput, qtyInput].forEach(function (inp) {
       inp.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
     });
   }
@@ -947,6 +1136,7 @@
         html += '<div class="item-row edit-row" data-item-id="' + item.id + '">' +
           '<input type="text" class="mono edit-code" value="' + escapeHtml(item.code) + '" id="editCode-' + item.id + '">' +
           '<input type="text" class="edit-desc" value="' + escapeHtml(item.description) + '" id="editDesc-' + item.id + '">' +
+          '<input type="text" class="mono edit-validade" placeholder="dd/mm/aaaa" value="' + escapeHtml(item.validade || "") + '" id="editValidade-' + item.id + '" style="width:92px;">' +
           '<input type="number" class="mono edit-qty" value="' + item.quantity + '" id="editQty-' + item.id + '">' +
           '<button class="btn btn-primary btn-icon" data-save-edit="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">✓</button>' +
           '<button class="btn btn-ghost btn-icon" data-cancel-edit="' + item.id + '">✕</button>' +
@@ -956,7 +1146,7 @@
           '<span class="grip">⠿</span>' +
           (isGlobal ? '<span class="item-shelf-tag"><span class="shelf-dot" style="width:7px;height:7px;background:' + ownerShelf.color + '"></span>' + escapeHtml(ownerShelf.name) + '</span>' : '') +
           '<div class="item-code-wrap"><div class="item-code mono" data-hscroll>' + escapeHtml(item.code) + '</div></div>' +
-          '<div class="item-desc-wrap"><div class="item-desc" data-hscroll>' + escapeHtml(item.description) + '</div></div>' +
+          '<div class="item-desc-wrap"><div class="item-desc' + (getExpiryClass(item.validade) ? ' ' + getExpiryClass(item.validade) : '') + '" data-hscroll' + (item.validade ? ' title="Validade: ' + escapeHtml(item.validade) + '"' : '') + '>' + escapeHtml(item.description) + '</div></div>' +
           '<div class="qty-controls">' +
             '<button class="qty-btn" data-qty-down="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">−</button>' +
             '<div class="qty-val-wrap"><div class="qty-val mono' + (item.quantity <= LOW_STOCK_THRESHOLD ? ' qty-low' : '') + '" data-hscroll title="' + (item.quantity <= LOW_STOCK_THRESHOLD ? "Estoque baixo" : "") + '">' + item.quantity + '</div></div>' +
@@ -1094,9 +1284,15 @@
     if (!item) return;
     var code = document.getElementById("editCode-" + itemId).value.trim();
     var description = document.getElementById("editDesc-" + itemId).value.trim();
+    var validade = document.getElementById("editValidade-" + itemId).value.trim();
     var quantity = parseInt(document.getElementById("editQty-" + itemId).value, 10);
+    if (validade && !parseBRDate(validade)) {
+      showToast("Data de validade inválida — use dd/mm/aaaa");
+      return;
+    }
     item.code = code || "—";
     if (description) item.description = description;
+    item.validade = validade;
     item.quantity = isFinite(quantity) ? quantity : item.quantity;
     state.editingItemId = null;
     saveData();
@@ -1108,10 +1304,13 @@
   function removeItem(shelfId, itemId) {
     var shelf = state.shelves.find(function (s) { return s.id === shelfId; });
     if (!shelf) return;
+    var item = shelf.items.find(function (i) { return i.id === itemId; });
     shelf.items = shelf.items.filter(function (i) { return i.id !== itemId; });
+    if (item) logHistory("removed", item, shelf);
     closeModal();
     saveData();
     renderHeaderStats();
+    renderExpiryBadges();
     renderSidebar();
     renderItemsList();
     showToast("Item removido");
@@ -1119,6 +1318,9 @@
 
   function removeShelf(shelfId) {
     var shelf = state.shelves.find(function (s) { return s.id === shelfId; });
+    if (shelf) {
+      shelf.items.forEach(function (item) { logHistory("removed", item, shelf); });
+    }
     state.shelves = state.shelves.filter(function (s) { return s.id !== shelfId; });
     if (state.selectedShelfId === shelfId) {
       state.selectedShelfId = state.shelves[0] ? state.shelves[0].id : null;
@@ -1228,6 +1430,38 @@
     return dd + "/" + mm + "/" + d.getFullYear();
   }
 
+  // Converte "dd/mm/aaaa" num objeto Date (à meia-noite), ou null se o
+  // texto não for uma data válida nesse formato.
+  function parseBRDate(str) {
+    if (!str) return null;
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(str.trim());
+    if (!m) return null;
+    var day = parseInt(m[1], 10), month = parseInt(m[2], 10) - 1, year = parseInt(m[3], 10);
+    var d = new Date(year, month, day);
+    if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) return null;
+    return d;
+  }
+
+  // Quantos dias faltam (negativo se já passou) entre hoje e a data dada.
+  function daysUntil(date) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+  }
+
+  // Classe CSS de destaque pra descrição do item, conforme a proximidade
+  // da validade: amarelo (≤30 dias), vermelho (≤7 dias ou já vencido).
+  function getExpiryClass(validadeStr) {
+    var d = parseBRDate(validadeStr);
+    if (!d) return "";
+    var days = daysUntil(d);
+    if (days <= 7) return "desc-expiring-soon";
+    if (days <= 30) return "desc-expiring";
+    return "";
+  }
+
   // Monta o cabeçalho no padrão do documento da empresa (logo, Assunto/
   // Título, Revisão/Código/Vigência/Total de páginas, Local e a etiqueta
   // "Prateleira" pintada na cor) seguido da tabela Código/Descrição/Linha/
@@ -1283,7 +1517,7 @@
           '<div class="print-local"><b class="ph-field-label" style="font-size:11px;">Local:</b> ' + escapeHtml(DOC_INFO.local) + '</div>' +
           '<div class="print-shelf-badge">' +
             '<span class="ph-field-label" style="font-size:11px;">Prateleira</span>' +
-            '<span class="print-shelf-color-box" style="background:' + group.color + ';">' + getColorName(group.color) + '</span>' +
+            '<span class="print-shelf-color-box" style="background:' + group.color + ';color:' + getContrastTextColor(group.color) + ';">' + getColorName(group.color) + '</span>' +
           '</div>' +
         '</div>' +
         '<table class="print-items-table">' +
@@ -1478,6 +1712,10 @@
     }
     return new File([data], "backup-estoque-" + date + ".json", { type: "application/json" });
   }
+
+  document.getElementById("historyBtn").addEventListener("click", function () {
+    openHistoryModal();
+  });
 
   document.getElementById("shareBtn").addEventListener("click", async function () {
     var file = buildBackupFile(true);
