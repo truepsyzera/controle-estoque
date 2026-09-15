@@ -47,9 +47,37 @@
   .expiry-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; cursor: pointer; border: none; }
   .expiry-badge.warn-yellow { background: rgba(234,179,8,0.15); color: #eab308; }
   .expiry-badge.warn-red { background: rgba(239,68,68,0.15); color: #ef4444; }
-  .header-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
   .layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+  /* Estrutura de abas (Início / Movimentação / Estoque / Opções) */
+  .app-page { display: none; }
+  .app-page.active { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+  #page-estoque.active { overflow-y: hidden; }
+
+  .bottom-nav { display: flex; border-top: 1px solid #1c1917; background: #0c0a09; flex-shrink: 0; }
+  .bottom-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; background: transparent; border: none; color: #78716c; font-size: 10px; cursor: pointer; }
+  .bottom-nav-btn .bn-icon { font-size: 18px; line-height: 1; }
+  .bottom-nav-btn.active { color: #15b8c9; }
+
+  .page-header { padding: 16px 16px 6px; }
+  .page-title { font-size: 16px; font-weight: 800; }
+  .page-subtitle { font-size: 11px; color: #78716c; margin-top: 2px; }
+
+  .dash-stats-row { display: flex; gap: 10px; padding: 10px 16px; }
+  .dash-stat-card { flex: 1; background: #1c1917; border-radius: 10px; padding: 12px 14px; }
+  .dash-stat-label { font-size: 10.5px; color: #78716c; text-transform: uppercase; letter-spacing: 0.03em; }
+  .dash-stat-value { font-size: 24px; font-weight: 800; color: #fafaf9; margin-top: 4px; }
+  .dash-section { padding: 10px 16px; }
+  .dash-section-title { font-size: 11px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
+  .dash-backup-line { font-size: 12px; color: #a8a29e; }
+
+  .options-list { display: flex; flex-direction: column; padding: 6px 16px 16px; gap: 6px; }
+  .options-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; background: #1c1917; border: none; border-radius: 10px; color: #e7e5e4; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+  .options-item:hover { background: #292524; }
+  .options-item-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+  .options-item-label { flex: 1; }
+  .options-item-badge { background: #0c0a09; color: #a8a29e; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
   .sidebar { width: 230px; border-right: 1px solid #1c1917; display: flex; flex-direction: column; overflow-y: auto; padding: 12px; gap: 4px; flex-shrink: 0; transition: width 0.15s ease, padding 0.15s ease, opacity .15s ease; }
   .sidebar.collapsed { width: 0; padding: 0; opacity: 0; overflow: hidden; }
   .sidebar.compact { width: 76px; padding: 12px 6px; align-items: center; }
@@ -268,27 +296,101 @@
     <div class="backup-reminder mono" id="backupReminder"></div>
     <div class="expiry-badges" id="expiryBadges"></div>
   </div>
-  <div class="header-actions">
-    <button class="btn btn-ghost btn-icon" id="historyBtn" title="Histórico de movimentação (mês atual)">🕒 Histórico</button>
-    <button class="btn btn-ghost btn-icon" id="shareBtn" title="Compartilhar backup (WhatsApp, e-mail, etc.)">📤 Compartilhar</button>
-    <button class="btn btn-ghost btn-icon" id="exportBtn" title="Exportar backup (.json)">⬇ Backup</button>
-    <button class="btn btn-ghost btn-icon" id="importBtn" title="Importar backup (.json)">⬆ Importar</button>
-    <input type="file" id="fileInput" accept="application/json" class="hidden-file-input">
-  </div>
 </header>
 
-<div class="layout">
-  <div class="sidebar" id="sidebar">
-    <div id="shelfList"></div>
+<div class="app-page" id="page-inicio">
+  <div class="page-header"><div class="page-title">Painel de Visão Geral</div></div>
+  <div class="dash-stats-row">
+    <div class="dash-stat-card">
+      <div class="dash-stat-label">Total Prateleiras</div>
+      <div class="dash-stat-value" id="dashTotalShelves">0</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-label">Total Itens</div>
+      <div class="dash-stat-value" id="dashTotalItems">0</div>
+    </div>
   </div>
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-  <div class="main">
-    <div class="toolbar" id="toolbar"></div>
-    <div id="addItemFormWrap"></div>
-    <div class="items-list" id="itemsList"></div>
+  <div class="dash-section">
+    <div class="dash-section-title">Backup</div>
+    <div class="mono dash-backup-line" id="dashBackupLine"></div>
+  </div>
+  <div class="dash-section">
+    <div class="dash-section-title">Últimas Atividades</div>
+    <div id="dashRecentActivity"></div>
+    <button class="btn btn-ghost" id="dashSeeAllHistory" style="margin-top:10px;width:100%;">Ver histórico completo</button>
   </div>
 </div>
+
+<div class="app-page" id="page-movimentacao">
+  <div class="page-header">
+    <div class="page-title">Movimentação</div>
+    <div class="page-subtitle mono" id="movimentacaoSubtitle"></div>
+  </div>
+  <div id="movimentacaoList" style="padding: 0 16px 16px;"></div>
+</div>
+
+<div class="app-page active" id="page-estoque">
+  <div class="layout">
+    <div class="sidebar" id="sidebar">
+      <div id="shelfList"></div>
+    </div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="main">
+      <div class="toolbar" id="toolbar"></div>
+      <div id="addItemFormWrap"></div>
+      <div class="items-list" id="itemsList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app-page" id="page-opcoes">
+  <div class="page-header"><div class="page-title">Opções</div></div>
+  <div class="options-list">
+    <button class="options-item" id="optCreateShelf">
+      <span class="options-item-icon">+</span>
+      <span class="options-item-label">Criar prateleira</span>
+    </button>
+    <button class="options-item" id="optExpiring">
+      <span class="options-item-icon" style="color:#eab308;">🔖</span>
+      <span class="options-item-label">Itens a Vencer</span>
+      <span class="options-item-badge" id="optExpiringCount">0</span>
+    </button>
+    <button class="options-item" id="optExpired">
+      <span class="options-item-icon" style="color:#ef4444;">⚠</span>
+      <span class="options-item-label">Itens Vencidos</span>
+      <span class="options-item-badge" id="optExpiredCount">0</span>
+    </button>
+    <button class="options-item" id="importBtn">
+      <span class="options-item-icon" style="color:#22c55e;">⬆</span>
+      <span class="options-item-label">Importar backup</span>
+    </button>
+    <button class="options-item" id="exportBtn">
+      <span class="options-item-icon">⬇</span>
+      <span class="options-item-label">Baixar backup</span>
+    </button>
+    <button class="options-item" id="shareBtn">
+      <span class="options-item-icon">📤</span>
+      <span class="options-item-label">Compartilhar backup</span>
+    </button>
+    <input type="file" id="fileInput" accept="application/json" class="hidden-file-input">
+  </div>
+</div>
+
+<div class="app-page" id="page-item-form">
+  <div class="page-header" style="display:flex;align-items:center;gap:10px;">
+    <button class="btn btn-ghost btn-icon" id="itemFormBack" title="Voltar">←</button>
+    <div class="page-title" id="itemFormTitle">Adicionar Novo Item</div>
+  </div>
+  <div id="itemFormBody" style="padding:6px 16px 16px;"></div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn" data-tab="inicio"><span class="bn-icon">🏠</span><span>Início</span></button>
+  <button class="bottom-nav-btn" data-tab="movimentacao"><span class="bn-icon">🕒</span><span>Movimentação</span></button>
+  <button class="bottom-nav-btn active" data-tab="estoque"><span class="bn-icon">📦</span><span>Estoque</span></button>
+  <button class="bottom-nav-btn" data-tab="opcoes"><span class="bn-icon">⚙</span><span>Opções</span></button>
+</nav>
 
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
@@ -337,7 +439,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.6";
+  var APP_VERSION = "v 1.8";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -370,6 +472,10 @@
     colorGroupOrder: [],
     colorGroupCollapsed: {},
     history: [],
+    activeTab: "estoque",
+    itemFormMode: "add",
+    itemFormShelfId: null,
+    itemFormItemId: null,
     pdfMeta: { revisao: "000", vigencia: "", formato: "linha_coluna" },
     lastBackupAt: null,
     printSelection: {}
@@ -442,16 +548,12 @@
 
   // Mostra o histórico do mês atual (adicionados/removidos) — reseta
   // sozinho assim que o mês vira (ver pruneOldHistory).
-  function openHistoryModal() {
-    pruneOldHistory();
-    var root = document.getElementById("modalRoot");
-    var entries = state.history.slice().sort(function (a, b) { return b.timestamp - a.timestamp; });
+  var MONTH_NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
-    var monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-    var now = new Date();
-    var monthLabel = monthNames[now.getMonth()] + " de " + now.getFullYear();
-
-    var rows = entries.map(function (h) {
+  // Monta o HTML de uma lista de linhas de histórico (usado tanto na aba
+  // Movimentação inteira quanto na prévia "Últimas Atividades" do Início).
+  function buildHistoryRowsHtml(entries) {
+    return entries.map(function (h) {
       var d = new Date(h.timestamp);
       var dateStr = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " +
         String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -464,24 +566,16 @@
         '</div>' +
       '</div>';
     }).join("");
+  }
 
-    root.innerHTML =
-      '<div class="modal-overlay" id="modalOverlay">' +
-        '<div class="modal-box" style="max-width:380px;">' +
-          '<div class="modal-title">Histórico — ' + monthLabel + '</div>' +
-          '<div class="modal-text">Reseta automaticamente no início de cada mês.</div>' +
-          '<div class="history-list">' + (rows || '<div class="modal-text">Nenhuma movimentação neste mês ainda.</div>') + '</div>' +
-          '<div class="modal-actions" style="margin-top:12px;">' +
-            '<button class="btn btn-ghost" id="historyModalClose">Fechar</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    function close() { root.innerHTML = ""; }
-    document.getElementById("historyModalClose").addEventListener("click", close);
-    document.getElementById("modalOverlay").addEventListener("click", function (e) {
-      if (e.target.id === "modalOverlay") close();
-    });
+  function renderMovimentacaoPage() {
+    pruneOldHistory();
+    var entries = state.history.slice().sort(function (a, b) { return b.timestamp - a.timestamp; });
+    var now = new Date();
+    document.getElementById("movimentacaoSubtitle").textContent =
+      MONTH_NAMES[now.getMonth()] + " de " + now.getFullYear() + " · reseta automaticamente todo início de mês";
+    document.getElementById("movimentacaoList").innerHTML =
+      buildHistoryRowsHtml(entries) || '<div class="modal-text" style="padding-top:10px;">Nenhuma movimentação neste mês ainda.</div>';
   }
 
   var toastTimer = null;
@@ -506,6 +600,10 @@
     return null;
   }
 
+  function findShelfById(id) {
+    return state.shelves.find(function (s) { return s.id === id; });
+  }
+
   function render() {
     renderHeaderStats();
     renderExpiryBadges();
@@ -514,6 +612,17 @@
     renderAddItemForm();
     renderItemsList();
     updateSidebarBackdrop();
+    renderInicioPage();
+    renderMovimentacaoPage();
+  }
+
+  function getBackupReminderInfo() {
+    if (!state.lastBackupAt) {
+      return { text: "⚠ Nenhum backup feito ainda", warn: true };
+    }
+    var days = Math.floor((Date.now() - state.lastBackupAt) / 86400000);
+    var label = days <= 0 ? "hoje" : days === 1 ? "há 1 dia" : "há " + days + " dias";
+    return { text: (days >= 7 ? "⚠ " : "") + "Último backup: " + label, warn: days >= 7 };
   }
 
   function renderHeaderStats() {
@@ -526,23 +635,34 @@
       state.shelves.length + (state.shelves.length === 1 ? " prateleira · " : " prateleiras · ") +
       totalItems + " itens · " + totalQty + " unid.";
 
+    var info = getBackupReminderInfo();
     var reminder = document.getElementById("backupReminder");
-    if (!state.lastBackupAt) {
-      reminder.textContent = "⚠ Nenhum backup feito ainda";
-      reminder.className = "backup-reminder mono backup-warn";
-    } else {
-      var days = Math.floor((Date.now() - state.lastBackupAt) / 86400000);
-      var label = days <= 0 ? "hoje" : days === 1 ? "há 1 dia" : "há " + days + " dias";
-      reminder.textContent = (days >= 7 ? "⚠ " : "") + "Último backup: " + label;
-      reminder.className = "backup-reminder mono" + (days >= 7 ? " backup-warn" : "");
-    }
+    reminder.textContent = info.text;
+    reminder.className = "backup-reminder mono" + (info.warn ? " backup-warn" : "");
+  }
+
+  // Preenche a aba Início: contagens rápidas, aviso de backup e as últimas
+  // atividades (versão resumida da aba Movimentação).
+  function renderInicioPage() {
+    document.getElementById("dashTotalShelves").textContent = state.shelves.length;
+    var totalItems = 0;
+    state.shelves.forEach(function (s) { totalItems += s.items.length; });
+    document.getElementById("dashTotalItems").textContent = totalItems;
+
+    var info = getBackupReminderInfo();
+    var line = document.getElementById("dashBackupLine");
+    line.textContent = info.text;
+    line.style.color = info.warn ? "#f59e0b" : "#a8a29e";
+
+    var recent = state.history.slice().sort(function (a, b) { return b.timestamp - a.timestamp; }).slice(0, 5);
+    document.getElementById("dashRecentActivity").innerHTML =
+      buildHistoryRowsHtml(recent) || '<div class="modal-text">Nenhuma atividade recente.</div>';
   }
 
   // Calcula quantos itens estão a vencer (0-30 dias) e quantos já venceram,
   // olhando todas as prateleiras, e mostra dois avisos clicáveis no
   // cabeçalho (só aparecem quando há pelo menos 1 item na categoria).
-  function renderExpiryBadges() {
-    var el = document.getElementById("expiryBadges");
+  function computeExpirySummary() {
     var vencendo = [];
     var vencidos = [];
     state.shelves.forEach(function (shelf) {
@@ -557,6 +677,13 @@
     });
     vencendo.sort(function (a, b) { return a.days - b.days; });
     vencidos.sort(function (a, b) { return a.days - b.days; });
+    return { vencendo: vencendo, vencidos: vencidos };
+  }
+
+  function renderExpiryBadges() {
+    var el = document.getElementById("expiryBadges");
+    var summary = computeExpirySummary();
+    var vencendo = summary.vencendo, vencidos = summary.vencidos;
 
     var html = "";
     if (vencendo.length > 0) {
@@ -577,6 +704,9 @@
         openExpiryListModal("Itens vencidos", vencidos);
       });
     }
+
+    document.getElementById("optExpiringCount").textContent = vencendo.length;
+    document.getElementById("optExpiredCount").textContent = vencidos.length;
   }
 
   function openExpiryListModal(title, entries) {
@@ -1025,7 +1155,7 @@
         openPdfModal([shelf]);
       });
       document.getElementById("editShelfBtn").addEventListener("click", function () {
-        openEditShelfModal(shelf);
+        openShelfFormModal(shelf);
       });
     }
   }
@@ -1035,53 +1165,10 @@
     var shelf = getSelectedShelf();
     if (!shelf) { wrap.innerHTML = ""; return; }
 
-    wrap.innerHTML =
-      '<div class="add-item-form">' +
-        '<div class="field" style="width:100px;"><label>Código</label><input type="text" id="itemCodeInput" placeholder="Ex: 0231" class="mono"></div>' +
-        '<div class="field" style="flex:1;min-width:160px;"><label>Descrição</label><input type="text" id="itemDescInput" placeholder="Ex: Máscara colágeno"></div>' +
-        '<div class="field" style="width:110px;"><label>Validade</label><input type="text" id="itemValidadeInput" placeholder="dd/mm/aaaa" class="mono"></div>' +
-        '<div class="field" style="width:80px;"><label>Qtd.</label><input type="number" id="itemQtyInput" placeholder="0" class="mono"></div>' +
-        '<button class="btn btn-primary" id="addItemBtn">+ Adicionar</button>' +
-      '</div>';
+    wrap.innerHTML = '<div style="padding:10px 16px;"><button class="btn btn-primary" id="openAddItemBtn" style="width:100%;padding:10px;">+ Adicionar Item</button></div>';
 
-    var descInput = document.getElementById("itemDescInput");
-    var qtyInput = document.getElementById("itemQtyInput");
-    var codeInput = document.getElementById("itemCodeInput");
-    var validadeInput = document.getElementById("itemValidadeInput");
-
-    function submit() {
-      var description = descInput.value.trim();
-      if (!description) { descInput.focus(); return; }
-      var code = codeInput.value.trim();
-      var quantity = parseInt(qtyInput.value, 10);
-      var validade = validadeInput.value.trim();
-      if (validade && !parseBRDate(validade)) {
-        showToast("Data de validade inválida — use dd/mm/aaaa");
-        validadeInput.focus();
-        return;
-      }
-      var newItem = {
-        id: uid(),
-        code: code || "—",
-        description: description,
-        quantity: isFinite(quantity) ? quantity : 0,
-        validade: validade
-      };
-      shelf.items.push(newItem);
-      logHistory("added", newItem, shelf);
-      saveData();
-      codeInput.value = ""; descInput.value = ""; qtyInput.value = ""; validadeInput.value = "";
-      descInput.focus();
-      renderHeaderStats();
-      renderExpiryBadges();
-      renderSidebar();
-      renderItemsList();
-      showToast('Item "' + description + '" adicionado');
-    }
-
-    document.getElementById("addItemBtn").addEventListener("click", submit);
-    [codeInput, descInput, validadeInput, qtyInput].forEach(function (inp) {
-      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+    document.getElementById("openAddItemBtn").addEventListener("click", function () {
+      openItemFormPage("add", shelf.id, null);
     });
   }
 
@@ -1153,7 +1240,7 @@
             '<button class="qty-btn" data-qty-up="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">+</button>' +
           '</div>' +
           (otherShelves.length ? '<button class="btn btn-ghost btn-icon" data-open-move="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '" title="Mover para outra prateleira">↦</button>' : '') +
-          '<button class="btn btn-ghost btn-icon" data-edit-item="' + item.id + '">✎</button>' +
+          '<button class="btn btn-ghost btn-icon" data-edit-item="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">✎</button>' +
           '<button class="btn btn-ghost btn-icon" style="color:#f87171;" data-delete-item="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">🗑</button>' +
         '</div>';
       }
@@ -1193,8 +1280,7 @@
     // Bind: edit
     container.querySelectorAll("[data-edit-item]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.editingItemId = btn.getAttribute("data-edit-item");
-        renderItemsList();
+        openItemFormPage("edit", btn.getAttribute("data-owner-shelf"), btn.getAttribute("data-edit-item"));
       });
     });
     container.querySelectorAll("[data-cancel-edit]").forEach(function (btn) {
@@ -1579,37 +1665,186 @@
   // Edita nome, cor, linha e coluna de uma prateleira já existente (útil
   // pra preencher Linha/Coluna nas prateleiras cadastradas antes desse
   // campo existir).
-  function openEditShelfModal(shelf) {
+  // Mostra/monta a tela cheia de Adicionar ou Editar item (mode: "add" ou
+  // "edit"). shelfId é a prateleira de origem (pré-selecionada no campo
+  // "Prateleira atual"); itemId só é usado no modo "edit".
+  function openItemFormPage(mode, shelfId, itemId) {
+    state.itemFormMode = mode;
+    state.itemFormShelfId = shelfId;
+    state.itemFormItemId = itemId || null;
+    renderItemFormPage();
+    document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
+    document.getElementById("page-item-form").classList.add("active");
+  }
+
+  function closeItemFormPage() {
+    document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
+    document.getElementById("page-estoque").classList.add("active");
+  }
+
+  function renderItemFormPage() {
+    var isEdit = state.itemFormMode === "edit";
+    var shelf = findShelfById(state.itemFormShelfId);
+    var item = isEdit && shelf ? shelf.items.find(function (i) { return i.id === state.itemFormItemId; }) : null;
+
+    document.getElementById("itemFormTitle").textContent = isEdit
+      ? "Editar Item" + (item ? ": " + item.description : "")
+      : "Adicionar Novo Item";
+
+    var shelfOptions = state.shelves.map(function (s) {
+      var colorInfo = SHELF_COLORS.find(function (c) { return c.value === s.color; });
+      var label = (colorInfo ? colorInfo.name : "Cor") + " — " + s.name;
+      var sel = s.id === state.itemFormShelfId ? " selected" : "";
+      return '<option value="' + s.id + '"' + sel + '>' + escapeHtml(label) + '</option>';
+    }).join("");
+
+    var body = document.getElementById("itemFormBody");
+
+    if (state.shelves.length === 0) {
+      body.innerHTML = '<div class="modal-text">Crie uma prateleira primeiro (aba Opções) antes de adicionar itens.</div>';
+      return;
+    }
+
+    body.innerHTML =
+      '<div class="field" style="margin-bottom:12px;"><label>Código</label><input type="text" id="ifCode" class="mono" value="' + (item ? escapeHtml(item.code) : "") + '"></div>' +
+      '<div class="field" style="margin-bottom:12px;"><label>Descrição</label><input type="text" id="ifDesc" value="' + (item ? escapeHtml(item.description) : "") + '"></div>' +
+      '<div class="field" style="margin-bottom:12px;">' +
+        '<label>Quantidade</label>' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<button class="qty-btn" id="ifQtyDown" type="button" style="width:32px;height:32px;font-size:18px;">−</button>' +
+          '<input type="number" id="ifQty" class="mono" style="text-align:center;flex:1;" value="' + (item ? item.quantity : 0) + '">' +
+          '<button class="qty-btn" id="ifQtyUp" type="button" style="width:32px;height:32px;font-size:18px;">+</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="field" style="margin-bottom:12px;"><label>Data de validade</label><input type="text" id="ifValidade" class="mono" placeholder="dd/mm/aaaa" value="' + (item ? escapeHtml(item.validade || "") : "") + '"></div>' +
+      '<div class="field" style="margin-bottom:20px;"><label>Prateleira atual</label><select id="ifShelfSelect">' + shelfOptions + '</select></div>' +
+      '<button class="btn btn-primary" id="ifSave" style="width:100%;margin-bottom:8px;padding:11px;">' + (isEdit ? "Salvar Alterações" : "Salvar Item") + '</button>' +
+      (isEdit
+        ? '<button class="btn btn-ghost" id="ifDelete" style="width:100%;color:#f87171;padding:11px;">Excluir Item</button>'
+        : '<button class="btn btn-ghost" id="ifClear" style="width:100%;padding:11px;">Limpar</button>');
+
+    document.getElementById("ifQtyDown").addEventListener("click", function () {
+      var inp = document.getElementById("ifQty");
+      inp.value = Math.max(0, (parseInt(inp.value, 10) || 0) - 1);
+    });
+    document.getElementById("ifQtyUp").addEventListener("click", function () {
+      var inp = document.getElementById("ifQty");
+      inp.value = (parseInt(inp.value, 10) || 0) + 1;
+    });
+    document.getElementById("ifSave").addEventListener("click", saveItemForm);
+
+    if (isEdit) {
+      document.getElementById("ifDelete").addEventListener("click", function () {
+        openConfirmModal(
+          "Remover item?",
+          'Isso vai remover "' + (item ? item.description : "") + '".',
+          function () {
+            var s = findShelfById(state.itemFormShelfId);
+            var it = s.items.find(function (i) { return i.id === state.itemFormItemId; });
+            s.items = s.items.filter(function (i) { return i.id !== state.itemFormItemId; });
+            if (it) logHistory("removed", it, s);
+            saveData();
+            closeModal();
+            closeItemFormPage();
+            render();
+            showToast("Item removido");
+          }
+        );
+      });
+    } else {
+      document.getElementById("ifClear").addEventListener("click", function () {
+        renderItemFormPage();
+      });
+    }
+  }
+
+  function saveItemForm() {
+    var code = document.getElementById("ifCode").value.trim();
+    var description = document.getElementById("ifDesc").value.trim();
+    var quantity = parseInt(document.getElementById("ifQty").value, 10);
+    var validade = document.getElementById("ifValidade").value.trim();
+    var newShelfId = document.getElementById("ifShelfSelect").value;
+
+    if (!description) { showToast("Descrição é obrigatória"); return; }
+    if (validade && !parseBRDate(validade)) { showToast("Data de validade inválida — use dd/mm/aaaa"); return; }
+    if (!newShelfId) { showToast("Escolha uma prateleira"); return; }
+
+    var isEdit = state.itemFormMode === "edit";
+
+    if (isEdit) {
+      var oldShelf = findShelfById(state.itemFormShelfId);
+      var item = oldShelf ? oldShelf.items.find(function (i) { return i.id === state.itemFormItemId; }) : null;
+      if (!item) return;
+      item.code = code || "—";
+      item.description = description;
+      item.quantity = isFinite(quantity) ? quantity : item.quantity;
+      item.validade = validade;
+      if (newShelfId !== oldShelf.id) {
+        oldShelf.items = oldShelf.items.filter(function (i) { return i.id !== item.id; });
+        var newShelf = findShelfById(newShelfId);
+        newShelf.items.push(item);
+        showToast('Item atualizado e movido para "' + newShelf.name + '"');
+      } else {
+        showToast("Item atualizado");
+      }
+    } else {
+      var shelf = findShelfById(newShelfId);
+      var newItem = {
+        id: uid(),
+        code: code || "—",
+        description: description,
+        quantity: isFinite(quantity) ? quantity : 0,
+        validade: validade
+      };
+      shelf.items.push(newItem);
+      logHistory("added", newItem, shelf);
+      showToast('Item "' + description + '" adicionado');
+    }
+
+    saveData();
+    closeItemFormPage();
+    render();
+  }
+
+  // Modal único pra criar (shelf=null) ou editar (shelf existente) uma
+  // prateleira — nome, linha, coluna e cor.
+  function openShelfFormModal(shelf) {
+    var isEdit = !!shelf;
     var root = document.getElementById("modalRoot");
+    var nameVal = isEdit ? shelf.name : "";
+    var linhaVal = isEdit ? (shelf.linha || "") : "";
+    var colunaVal = isEdit ? (shelf.coluna || "") : "";
+    var colorVal = isEdit ? shelf.color : SHELF_COLORS[0].value;
+
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
         '<div class="modal-box">' +
-          '<div class="modal-title">Editar prateleira</div>' +
+          '<div class="modal-title">' + (isEdit ? "Editar prateleira" : "Nova prateleira") + '</div>' +
           '<div class="field" style="margin-bottom:10px;">' +
             '<label>Nome</label>' +
-            '<input type="text" id="editShelfNameInput" value="' + escapeHtml(shelf.name) + '">' +
+            '<input type="text" id="editShelfNameInput" placeholder="Ex: Prateleira A5" value="' + escapeHtml(nameVal) + '">' +
           '</div>' +
           '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-            '<div class="field" style="flex:1;"><label>Linha</label><input type="text" id="editShelfLinhaInput" value="' + escapeHtml(shelf.linha || "") + '" placeholder="Ex: A"></div>' +
-            '<div class="field" style="flex:1;"><label>Coluna</label><input type="text" id="editShelfColunaInput" value="' + escapeHtml(shelf.coluna || "") + '" placeholder="Ex: 4"></div>' +
+            '<div class="field" style="flex:1;"><label>Linha</label><input type="text" id="editShelfLinhaInput" value="' + escapeHtml(linhaVal) + '" placeholder="Ex: A"></div>' +
+            '<div class="field" style="flex:1;"><label>Coluna</label><input type="text" id="editShelfColunaInput" value="' + escapeHtml(colunaVal) + '" placeholder="Ex: 4"></div>' +
           '</div>' +
           '<div class="field" style="margin-bottom:16px;">' +
             '<label>Cor</label>' +
             '<div class="color-row">' +
               SHELF_COLORS.map(function (c) {
-                var sel = c.value === shelf.color ? " selected" : "";
+                var sel = c.value === colorVal ? " selected" : "";
                 return '<button class="color-dot' + sel + '" style="background:' + c.value + '" data-edit-pick-color="' + c.value + '" title="' + c.name + '"></button>';
               }).join("") +
             '</div>' +
           '</div>' +
           '<div class="modal-actions">' +
             '<button class="btn btn-ghost" id="editShelfCancel">Cancelar</button>' +
-            '<button class="btn btn-primary" id="editShelfSave">✓ Salvar</button>' +
+            '<button class="btn btn-primary" id="editShelfSave">' + (isEdit ? "✓ Salvar" : "✓ Criar") + '</button>' +
           '</div>' +
         '</div>' +
       '</div>';
 
-    var pickedColor = shelf.color;
+    var pickedColor = colorVal;
     function close() { root.innerHTML = ""; }
     document.getElementById("editShelfCancel").addEventListener("click", close);
     document.getElementById("modalOverlay").addEventListener("click", function (e) {
@@ -1625,14 +1860,26 @@
     document.getElementById("editShelfSave").addEventListener("click", function () {
       var name = document.getElementById("editShelfNameInput").value.trim();
       if (!name) return;
-      shelf.name = name;
-      shelf.linha = document.getElementById("editShelfLinhaInput").value.trim();
-      shelf.coluna = document.getElementById("editShelfColunaInput").value.trim();
-      shelf.color = pickedColor;
-      saveData();
-      close();
-      render();
-      showToast('Prateleira "' + name + '" atualizada');
+      var linha = document.getElementById("editShelfLinhaInput").value.trim();
+      var coluna = document.getElementById("editShelfColunaInput").value.trim();
+      if (isEdit) {
+        shelf.name = name;
+        shelf.linha = linha;
+        shelf.coluna = coluna;
+        shelf.color = pickedColor;
+        saveData();
+        close();
+        render();
+        showToast('Prateleira "' + name + '" atualizada');
+      } else {
+        var newShelf = { id: uid(), name: name, color: pickedColor, linha: linha, coluna: coluna, items: [] };
+        state.shelves.push(newShelf);
+        state.selectedShelfId = newShelf.id;
+        saveData();
+        close();
+        render();
+        showToast('Prateleira "' + name + '" criada');
+      }
     });
   }
 
@@ -1713,10 +1960,6 @@
     return new File([data], "backup-estoque-" + date + ".json", { type: "application/json" });
   }
 
-  document.getElementById("historyBtn").addEventListener("click", function () {
-    openHistoryModal();
-  });
-
   document.getElementById("shareBtn").addEventListener("click", async function () {
     var file = buildBackupFile(true);
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1786,6 +2029,44 @@
       e.target.value = "";
     };
     reader.readAsText(file);
+  });
+
+  // Troca entre as 4 abas (Início / Movimentação / Estoque / Opções).
+  function setActiveTab(tab) {
+    state.activeTab = tab;
+    document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
+    document.getElementById("page-" + tab).classList.add("active");
+    document.querySelectorAll(".bottom-nav-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    if (tab === "inicio") renderInicioPage();
+    if (tab === "movimentacao") renderMovimentacaoPage();
+  }
+
+  document.querySelectorAll(".bottom-nav-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () { setActiveTab(btn.getAttribute("data-tab")); });
+  });
+
+  document.getElementById("dashSeeAllHistory").addEventListener("click", function () {
+    setActiveTab("movimentacao");
+  });
+
+  document.getElementById("optCreateShelf").addEventListener("click", function () {
+    openShelfFormModal(null);
+  });
+
+  document.getElementById("optExpiring").addEventListener("click", function () {
+    var summary = computeExpirySummary();
+    openExpiryListModal("A vencer (próximos 30 dias)", summary.vencendo);
+  });
+
+  document.getElementById("optExpired").addEventListener("click", function () {
+    var summary = computeExpirySummary();
+    openExpiryListModal("Itens vencidos", summary.vencidos);
+  });
+
+  document.getElementById("itemFormBack").addEventListener("click", function () {
+    closeItemFormPage();
   });
 
   // Init
