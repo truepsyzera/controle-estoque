@@ -72,6 +72,21 @@
   .dash-section-title { font-size: 11px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
   .dash-backup-line { font-size: 12px; color: #a8a29e; }
 
+  .dash-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .dash-bar-label { width: 76px; font-size: 11px; color: #a8a29e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+  .dash-bar-track { flex: 1; height: 10px; background: #1c1917; border-radius: 5px; overflow: hidden; }
+  .dash-bar-fill { height: 100%; border-radius: 5px; }
+  .dash-bar-value { width: 26px; text-align: right; font-size: 11px; color: #78716c; flex-shrink: 0; }
+
+  .dash-donut-wrap { display: flex; align-items: center; gap: 16px; }
+  .dash-donut { width: 108px; height: 108px; border-radius: 50%; flex-shrink: 0; position: relative; }
+  .dash-donut::after { content: ""; position: absolute; inset: 20px; background: #0c0a09; border-radius: 50%; }
+  .dash-donut-legend { flex: 1; display: flex; flex-direction: column; gap: 5px; max-height: 170px; overflow-y: auto; min-width: 0; }
+  .dash-legend-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .dash-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dash-legend-label { flex: 1; color: #d6d3d1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dash-legend-value { color: #78716c; flex-shrink: 0; }
+
   .options-list { display: flex; flex-direction: column; padding: 6px 16px 16px; gap: 6px; }
   .options-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; background: #1c1917; border: none; border-radius: 10px; color: #e7e5e4; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
   .options-item:hover { background: #292524; }
@@ -311,6 +326,17 @@
     </div>
   </div>
   <div class="dash-section">
+    <div class="dash-section-title">Prateleiras Existentes</div>
+    <div id="dashShelfBars"></div>
+  </div>
+  <div class="dash-section">
+    <div class="dash-section-title">Unidades por Categoria</div>
+    <div class="dash-donut-wrap">
+      <div class="dash-donut" id="dashDonut"></div>
+      <div class="dash-donut-legend" id="dashDonutLegend"></div>
+    </div>
+  </div>
+  <div class="dash-section">
     <div class="dash-section-title">Backup</div>
     <div class="mono dash-backup-line" id="dashBackupLine"></div>
   </div>
@@ -439,10 +465,44 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 1.8";
+  var APP_VERSION = "v 1.9";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
+
+  // Categorização automática do Gráfico 3 (Unidades por Categoria), lendo
+  // palavras-chave na descrição do item. Prioridade: tipo de recipiente >
+  // volume > peso > "Outros" — cada item cai em UMA categoria só.
+  var CATEGORY_PATTERNS = [
+    [/\bfrasco\b/i, "Frasco"],
+    [/\bpote\b/i, "Pote"],
+    [/\bv[aá]lvula\b/i, "Válvula"],
+    [/\b400\s*ml\b/i, "400 ml"],
+    [/\b300\s*ml\b/i, "300 ml"],
+    [/\b120\s*ml\b/i, "120 ml"],
+    [/\b60\s*ml\b/i, "60 ml"],
+    [/\b30\s*ml\b/i, "30 ml"],
+    [/\b15\s*ml\b/i, "15 ml"],
+    [/\b1[,.]5\s*kg\b/i, "1,5 kg"],
+    [/\b1\s*kg\b/i, "1 kg"],
+    [/\b500\s*g\b/i, "500 g"],
+    [/\b400\s*g\b/i, "400 g"],
+    [/\b250\s*g\b/i, "250 g"]
+  ];
+  var CATEGORY_COLOR_MAP = {
+    "Frasco": "#15b8c9", "Pote": "#8b5cf6", "Válvula": "#f97316",
+    "400 ml": "#eab308", "300 ml": "#22c55e", "120 ml": "#3b82f6",
+    "60 ml": "#ec4899", "30 ml": "#a855f7", "15 ml": "#f43f5e",
+    "1,5 kg": "#84cc16", "1 kg": "#06b6d4", "500 g": "#d946ef",
+    "400 g": "#f59e0b", "250 g": "#10b981", "Outros": "#64748b"
+  };
+
+  function categorizeItemUnits(description) {
+    for (var i = 0; i < CATEGORY_PATTERNS.length; i++) {
+      if (CATEGORY_PATTERNS[i][0].test(description)) return CATEGORY_PATTERNS[i][1];
+    }
+    return "Outros";
+  }
 
   var DOC_INFO = {
     empresa: "Alquimia Cosméticos",
@@ -542,6 +602,7 @@
       code: item.code,
       description: item.description,
       shelfName: shelf ? shelf.name : "",
+      quantity: item.quantity || 0,
       timestamp: Date.now()
     });
   }
@@ -558,11 +619,12 @@
       var dateStr = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " +
         String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
       var isAdded = h.type === "added";
+      var qty = h.quantity || 0;
       return '<div class="history-row">' +
         '<span class="history-icon ' + (isAdded ? "history-added" : "history-removed") + '">' + (isAdded ? "+" : "−") + '</span>' +
         '<div class="history-info">' +
           '<div class="history-desc">' + escapeHtml(h.description) + (h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '') + '</div>' +
-          '<div class="history-meta mono">' + (isAdded ? "Adicionado" : "Removido") + " em " + dateStr + '</div>' +
+          '<div class="history-meta mono">' + (isAdded ? "+" : "−") + qty + " unid. · " + (isAdded ? "Adicionado" : "Removido") + " em " + dateStr + '</div>' +
         '</div>' +
       '</div>';
     }).join("");
@@ -648,6 +710,66 @@
     var totalItems = 0;
     state.shelves.forEach(function (s) { totalItems += s.items.length; });
     document.getElementById("dashTotalItems").textContent = totalItems;
+
+    // Gráfico 1 — Prateleiras Existentes: barras com a quantidade de itens
+    // de cada prateleira, ordenadas da maior pra menor.
+    var shelvesSorted = state.shelves.slice().sort(function (a, b) { return b.items.length - a.items.length; });
+    var maxCount = shelvesSorted.reduce(function (m, s) { return Math.max(m, s.items.length); }, 0);
+    var barsEl = document.getElementById("dashShelfBars");
+    if (shelvesSorted.length === 0) {
+      barsEl.innerHTML = '<div class="modal-text">Nenhuma prateleira cadastrada ainda.</div>';
+    } else {
+      barsEl.innerHTML = shelvesSorted.map(function (s) {
+        var pct = maxCount > 0 ? Math.round((s.items.length / maxCount) * 100) : 0;
+        return '<div class="dash-bar-row">' +
+          '<div class="dash-bar-label" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</div>' +
+          '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%;background:' + s.color + ';"></div></div>' +
+          '<div class="dash-bar-value mono">' + s.items.length + '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    // Gráfico 3 — Unidades por Categoria: lê palavras-chave da descrição de
+    // cada item e soma as quantidades por categoria (uma categoria só por
+    // item, na ordem recipiente > volume > peso > Outros).
+    var catTotals = {};
+    state.shelves.forEach(function (s) {
+      s.items.forEach(function (it) {
+        var cat = categorizeItemUnits(it.description);
+        catTotals[cat] = (catTotals[cat] || 0) + (it.quantity || 0);
+      });
+    });
+    var catEntries = Object.keys(catTotals)
+      .map(function (k) { return { label: k, value: catTotals[k] }; })
+      .filter(function (e) { return e.value > 0; })
+      .sort(function (a, b) { return b.value - a.value; });
+    var totalUnits = catEntries.reduce(function (acc, e) { return acc + e.value; }, 0);
+
+    var donutEl = document.getElementById("dashDonut");
+    var legendEl = document.getElementById("dashDonutLegend");
+    if (catEntries.length === 0) {
+      donutEl.style.background = "#1c1917";
+      legendEl.innerHTML = '<div class="modal-text">Nenhuma unidade cadastrada ainda.</div>';
+    } else {
+      var acc = 0;
+      var gradientParts = catEntries.map(function (e) {
+        var startPct = (acc / totalUnits) * 100;
+        acc += e.value;
+        var endPct = (acc / totalUnits) * 100;
+        var color = CATEGORY_COLOR_MAP[e.label] || "#64748b";
+        return color + " " + startPct.toFixed(2) + "% " + endPct.toFixed(2) + "%";
+      });
+      donutEl.style.background = "conic-gradient(" + gradientParts.join(", ") + ")";
+      legendEl.innerHTML = catEntries.map(function (e) {
+        var color = CATEGORY_COLOR_MAP[e.label] || "#64748b";
+        var pct = totalUnits > 0 ? Math.round((e.value / totalUnits) * 100) : 0;
+        return '<div class="dash-legend-row">' +
+          '<span class="dash-legend-dot" style="background:' + color + ';"></span>' +
+          '<span class="dash-legend-label">' + escapeHtml(e.label) + '</span>' +
+          '<span class="dash-legend-value mono">' + e.value + ' (' + pct + '%)</span>' +
+        '</div>';
+      }).join("");
+    }
 
     var info = getBackupReminderInfo();
     var line = document.getElementById("dashBackupLine");
