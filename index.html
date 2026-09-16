@@ -56,16 +56,17 @@
   #page-estoque.active { overflow-y: hidden; }
 
   .bottom-nav { display: flex; border-top: 1px solid #1c1917; background: #0c0a09; flex-shrink: 0; }
-  .bottom-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; background: transparent; border: none; color: #78716c; font-size: 10px; cursor: pointer; }
-  .bottom-nav-btn .bn-icon { font-size: 18px; line-height: 1; }
+  .bottom-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px 10px; background: transparent; border: none; color: #78716c; font-size: 10px; cursor: pointer; }
+  .bottom-nav-btn .bn-icon { font-size: 18px; line-height: 1; width: 30px; height: 22px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
   .bottom-nav-btn.active { color: #15b8c9; }
+  .bottom-nav-btn.active .bn-icon { background: rgba(21,184,201,0.15); }
 
   .page-header { padding: 16px 16px 6px; }
   .page-title { font-size: 16px; font-weight: 800; }
   .page-subtitle { font-size: 11px; color: #78716c; margin-top: 2px; }
 
   .dash-stats-row { display: flex; gap: 10px; padding: 10px 16px; }
-  .dash-stat-card { flex: 1; background: #1c1917; border-radius: 10px; padding: 12px 14px; }
+  .dash-stat-card { flex: 1; background: #171614; border: 1px solid #292524; border-radius: 14px; padding: 14px 16px; }
   .dash-stat-label { font-size: 10.5px; color: #78716c; text-transform: uppercase; letter-spacing: 0.03em; }
   .dash-stat-value { font-size: 24px; font-weight: 800; color: #fafaf9; margin-top: 4px; }
   .dash-section { padding: 10px 16px; }
@@ -82,7 +83,7 @@
   .dash-legend-value { color: #78716c; flex-shrink: 0; }
 
   .options-list { display: flex; flex-direction: column; padding: 6px 16px 16px; gap: 6px; }
-  .options-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; background: #1c1917; border: none; border-radius: 10px; color: #e7e5e4; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+  .options-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #171614; border: 1px solid #292524; border-radius: 14px; color: #e7e5e4; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
   .options-item:hover { background: #292524; }
   .options-item-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
   .options-item-label { flex: 1; }
@@ -107,7 +108,7 @@
   .shelf-count { font-size: 10px; color: #78716c; }
   .shelf-drop-target { outline: 2px dashed #15b8c9; outline-offset: -2px; background: rgba(21,184,201,0.08); border-radius: 8px; }
 
-  .new-shelf-box { padding: 8px; background: #1c1917; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .new-shelf-box { padding: 10px; background: #171614; border: 1px solid #292524; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
   .color-row { display: flex; gap: 5px; flex-wrap: wrap; }
   .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
   .color-dot.selected { border-color: #fafaf9; }
@@ -152,25 +153,25 @@
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 10px; color: #78716c; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
   input[type=text], input[type=number], select {
-    background: #0c0a09; border: 1px solid #44403c; border-radius: 6px; padding: 7px 9px; font-size: 13px; color: #fafaf9; width: 100%;
+    background-color: #171614; border: 1px solid #3f3b38; border-radius: 12px; padding: 11px 14px; font-size: 14px; color: #fafaf9; width: 100%;
   }
 
-  .btn { display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 7px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; padding: 8px 14px; white-space: nowrap; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; padding: 10px 16px; white-space: nowrap; }
   .btn-primary { background: #15b8c9; color: #0c0a09; }
-  .btn-ghost { background: transparent; color: #a8a29e; border: 1px solid #44403c; font-weight: 600; }
+  .btn-ghost { background: transparent; color: #a8a29e; border: 1px solid #3f3b38; font-weight: 600; }
   .btn-danger { background: #dc2626; color: #fff; }
-  .btn-icon { padding: 6px 8px; }
+  .btn-icon { padding: 8px 10px; border-radius: 10px; }
 
   .items-list { flex: 1; overflow-y: auto; padding: 6px 10px; }
   .empty-state { text-align: center; padding: 40px 20px; color: #57534e; }
   .empty-state .big-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
 
-  .item-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 8px; border-bottom: 1px solid #1c1917; cursor: grab; }
-  .item-row:hover { background: #1c1917; }
+  .item-row { display: flex; align-items: center; gap: 10px; padding: 12px 12px; border-radius: 12px; background: #171614; border: 1px solid #292524; margin-bottom: 7px; cursor: grab; }
+  .item-row:hover { background: #201e1b; border-color: #3f3b38; }
   .item-row.dragging { opacity: 0.4; }
   .grip { color: #44403c; flex-shrink: 0; font-size: 14px; }
   .item-code-wrap { flex-shrink: 0; width: 64px; overflow: hidden; }
-  .item-code { font-size: 11px; color: #a8a29e; background: #1c1917; padding: 3px 7px; border-radius: 5px; text-align: center; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; cursor: grab; touch-action: pan-x; }
+  .item-code { font-size: 11px; color: #a8a29e; background: #0c0a09; padding: 3px 7px; border-radius: 6px; text-align: center; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; cursor: grab; touch-action: pan-x; }
   .item-code::-webkit-scrollbar { display: none; }
   .item-desc-wrap { flex: 1; min-width: 60px; overflow: hidden; }
   .item-desc { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; touch-action: pan-x; cursor: grab; }
@@ -179,7 +180,7 @@
   .item-desc::-webkit-scrollbar { display: none; }
   .dragging-text { cursor: grabbing !important; }
   .qty-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-  .qty-btn { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #44403c; background: transparent; color: #e7e5e4; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .qty-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #3f3b38; background: transparent; color: #e7e5e4; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .qty-val-wrap { flex-shrink: 0; width: 40px; overflow: hidden; }
   .qty-val { font-size: 13px; color: #fafaf9; text-align: center; font-weight: 600; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; cursor: grab; touch-action: pan-x; }
   .qty-val.qty-low { color: #f97316; font-weight: 800; }
@@ -191,7 +192,7 @@
   .edit-qty { width: 70px !important; }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
-  .modal-box { background: #1c1917; border: 1px solid #292524; border-radius: 12px; padding: 20px; max-width: 320px; width: 100%; }
+  .modal-box { background: #171614; border: 1px solid #292524; border-radius: 18px; padding: 22px; max-width: 320px; width: 100%; }
   .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
   .modal-text { font-size: 13px; color: #a8a29e; margin-bottom: 16px; line-height: 1.4; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -455,7 +456,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 2.0";
+  var APP_VERSION = "v 2.1";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
