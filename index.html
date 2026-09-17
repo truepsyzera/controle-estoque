@@ -206,6 +206,7 @@
   .history-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
   .history-icon.history-added { background: rgba(21,184,201,0.15); color: #15b8c9; }
   .history-icon.history-removed { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .history-icon.history-moved { background: rgba(139,92,246,0.15); color: #a78bfa; }
   .history-info { flex: 1; min-width: 0; }
   .history-desc { font-size: 13px; color: #e7e5e4; }
   .history-shelf { color: #78716c; }
@@ -468,7 +469,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 2.2";
+  var APP_VERSION = "v 2.3";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -599,14 +600,18 @@
     if (state.history.length !== before) saveData();
   }
 
+  function logHistoryEntry(entry) {
+    entry.timestamp = Date.now();
+    state.history.push(entry);
+  }
+
   function logHistory(type, item, shelf) {
-    state.history.push({
+    logHistoryEntry({
       type: type,
       code: item.code,
       description: item.description,
       shelfName: shelf ? shelf.name : "",
-      quantity: item.quantity || 0,
-      timestamp: Date.now()
+      quantity: item.quantity || 0
     });
   }
 
@@ -621,13 +626,40 @@
       var d = new Date(h.timestamp);
       var dateStr = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " +
         String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-      var isAdded = h.type === "added";
       var qty = h.quantity || 0;
+      var iconClass, iconChar, metaText, shelfLabel;
+
+      if (h.type === "added") {
+        iconClass = "history-added"; iconChar = "+";
+        metaText = "+" + qty + " unid. · Adicionado em " + dateStr;
+        shelfLabel = h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '';
+      } else if (h.type === "removed") {
+        iconClass = "history-removed"; iconChar = "−";
+        metaText = "−" + qty + " unid. · Removido em " + dateStr;
+        shelfLabel = h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '';
+      } else if (h.type === "qty_increase") {
+        iconClass = "history-added"; iconChar = "+";
+        metaText = "+" + qty + " unid. · Quantidade aumentada em " + dateStr;
+        shelfLabel = h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '';
+      } else if (h.type === "qty_decrease") {
+        iconClass = "history-removed"; iconChar = "−";
+        metaText = "−" + qty + " unid. · Quantidade reduzida em " + dateStr;
+        shelfLabel = h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '';
+      } else if (h.type === "moved") {
+        iconClass = "history-moved"; iconChar = "↔";
+        metaText = "Movido em " + dateStr;
+        shelfLabel = ' <span class="history-shelf">— ' + escapeHtml(h.fromShelfName) + ' → ' + escapeHtml(h.toShelfName) + '</span>';
+      } else {
+        iconClass = "history-added"; iconChar = "•";
+        metaText = "Alterado em " + dateStr;
+        shelfLabel = h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '';
+      }
+
       return '<div class="history-row">' +
-        '<span class="history-icon ' + (isAdded ? "history-added" : "history-removed") + '">' + (isAdded ? "+" : "−") + '</span>' +
+        '<span class="history-icon ' + iconClass + '">' + iconChar + '</span>' +
         '<div class="history-info">' +
-          '<div class="history-desc">' + escapeHtml(h.description) + (h.shelfName ? ' <span class="history-shelf">— ' + escapeHtml(h.shelfName) + '</span>' : '') + '</div>' +
-          '<div class="history-meta mono">' + (isAdded ? "+" : "−") + qty + " unid. · " + (isAdded ? "Adicionado" : "Removido") + " em " + dateStr + '</div>' +
+          '<div class="history-desc">' + escapeHtml(h.description) + shelfLabel + '</div>' +
+          '<div class="history-meta mono">' + metaText + '</div>' +
         '</div>' +
       '</div>';
     }).join("");
@@ -1882,14 +1914,35 @@
       var oldShelf = findShelfById(state.itemFormShelfId);
       var item = oldShelf ? oldShelf.items.find(function (i) { return i.id === state.itemFormItemId; }) : null;
       if (!item) return;
+      var oldQty = item.quantity;
       item.code = code || "—";
       item.description = description;
       item.quantity = isFinite(quantity) ? quantity : item.quantity;
       item.validade = validade;
+
+      var qtyDelta = item.quantity - oldQty;
+      if (qtyDelta !== 0) {
+        logHistoryEntry({
+          type: qtyDelta > 0 ? "qty_increase" : "qty_decrease",
+          code: item.code,
+          description: item.description,
+          shelfName: oldShelf.name,
+          quantity: Math.abs(qtyDelta)
+        });
+      }
+
       if (newShelfId !== oldShelf.id) {
         oldShelf.items = oldShelf.items.filter(function (i) { return i.id !== item.id; });
         var newShelf = findShelfById(newShelfId);
         newShelf.items.push(item);
+        logHistoryEntry({
+          type: "moved",
+          code: item.code,
+          description: item.description,
+          fromShelfName: oldShelf.name,
+          toShelfName: newShelf.name,
+          quantity: item.quantity
+        });
         showToast('Item atualizado e movido para "' + newShelf.name + '"');
       } else {
         showToast("Item atualizado");
