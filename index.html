@@ -343,6 +343,7 @@
     <div class="page-subtitle mono" id="movimentacaoSubtitle"></div>
   </div>
   <div id="movimentacaoList" style="padding: 0 16px 16px;"></div>
+  <div id="movimentacaoArchiveList" style="padding: 0 16px 16px;"></div>
 </div>
 
 <div class="app-page active" id="page-estoque">
@@ -467,7 +468,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "v 2.4";
+  var APP_VERSION = "v 2.5";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -534,6 +535,7 @@
     colorGroupOrder: [],
     colorGroupCollapsed: {},
     history: [],
+    historyArchive: [],
     activeTab: "estoque",
     itemFormMode: "add",
     itemFormShelfId: null,
@@ -563,6 +565,7 @@
         state.colorGroupOrder = parsed.colorGroupOrder || [];
         state.colorGroupCollapsed = parsed.colorGroupCollapsed || {};
         state.history = parsed.history || [];
+        state.historyArchive = parsed.historyArchive || [];
       }
     } catch (e) {
       console.error("Erro ao carregar dados", e);
@@ -578,24 +581,47 @@
         lastBackupAt: state.lastBackupAt,
         colorGroupOrder: state.colorGroupOrder,
         colorGroupCollapsed: state.colorGroupCollapsed,
-        history: state.history
+        history: state.history,
+        historyArchive: state.historyArchive
       }));
     } catch (e) {
       showToast("Não consegui salvar (armazenamento cheio ou bloqueado).");
     }
   }
 
-  // O histórico só guarda o mês atual — assim que o mês vira, tudo do mês
-  // anterior é descartado.
+  // Em vez de simplesmente descartar os registros do mês anterior, arquiva
+  // eles em state.historyArchive (agrupados por ano/mês) antes de tirá-los
+  // do histórico do mês atual — assim nada se perde, e fica navegável por
+  // mês na aba Movimentação. Roda sempre que o app é aberto (não existe um
+  // "horário exato" confiável sem servidor por trás).
   function pruneOldHistory() {
     var now = new Date();
     var curM = now.getMonth(), curY = now.getFullYear();
-    var before = state.history.length;
-    state.history = state.history.filter(function (h) {
+    var keep = [];
+    var toArchive = {};
+    state.history.forEach(function (h) {
       var d = new Date(h.timestamp);
-      return d.getMonth() === curM && d.getFullYear() === curY;
+      if (d.getMonth() === curM && d.getFullYear() === curY) {
+        keep.push(h);
+      } else {
+        var key = d.getFullYear() + "-" + d.getMonth();
+        if (!toArchive[key]) toArchive[key] = { year: d.getFullYear(), month: d.getMonth(), entries: [] };
+        toArchive[key].entries.push(h);
+      }
     });
-    if (state.history.length !== before) saveData();
+    var changed = state.history.length !== keep.length;
+    state.history = keep;
+    Object.keys(toArchive).forEach(function (key) {
+      var group = toArchive[key];
+      var existing = state.historyArchive.find(function (a) { return a.year === group.year && a.month === group.month; });
+      if (existing) {
+        existing.entries = existing.entries.concat(group.entries);
+      } else {
+        state.historyArchive.push({ year: group.year, month: group.month, entries: group.entries });
+      }
+      changed = true;
+    });
+    if (changed) saveData();
   }
 
   function logHistoryEntry(entry) {
@@ -668,9 +694,72 @@
     var entries = state.history.slice().sort(function (a, b) { return b.timestamp - a.timestamp; });
     var now = new Date();
     document.getElementById("movimentacaoSubtitle").textContent =
-      MONTH_NAMES[now.getMonth()] + " de " + now.getFullYear() + " · reseta automaticamente todo início de mês";
+      MONTH_NAMES[now.getMonth()] + " de " + now.getFullYear() + " · meses anteriores ficam arquivados abaixo";
     document.getElementById("movimentacaoList").innerHTML =
       buildHistoryRowsHtml(entries) || '<div class="modal-text" style="padding-top:10px;">Nenhuma movimentação neste mês ainda.</div>';
+
+    var archiveEl = document.getElementById("movimentacaoArchiveList");
+    var archived = state.historyArchive.slice().sort(function (a, b) { return (b.year * 12 + b.month) - (a.year * 12 + a.month); });
+    if (archived.length === 0) {
+      archiveEl.innerHTML = "";
+    } else {
+      archiveEl.innerHTML = '<div class="dash-section-title" style="margin-top:6px;">Meses anteriores</div>' +
+        archived.map(function (group) {
+          var label = MONTH_NAMES[group.month] + " de " + group.year;
+          return '<button class="options-item" data-archive-month="' + group.year + '-' + group.month + '" style="margin-bottom:6px;">' +
+            '<span class="options-item-label">' + escapeHtml(label) + '</span>' +
+            '<span class="options-item-badge">' + group.entries.length + '</span>' +
+          '</button>';
+        }).join("");
+      archiveEl.querySelectorAll("[data-archive-month]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var parts = btn.getAttribute("data-archive-month").split("-");
+          openArchivedMonthModal(parseInt(parts[0], 10), parseInt(parts[1], 10));
+        });
+      });
+    }
+  }
+
+  // Mostra o histórico de um mês arquivado, com opção de exportar aquele
+  // mês num arquivo separado.
+  function openArchivedMonthModal(year, month) {
+    var group = state.historyArchive.find(function (a) { return a.year === year && a.month === month; });
+    if (!group) return;
+    var root = document.getElementById("modalRoot");
+    var label = MONTH_NAMES[month] + " de " + year;
+    var sorted = group.entries.slice().sort(function (a, b) { return b.timestamp - a.timestamp; });
+
+    root.innerHTML =
+      '<div class="modal-overlay" id="modalOverlay">' +
+        '<div class="modal-box" style="max-width:380px;">' +
+          '<div class="modal-title">Histórico — ' + label + '</div>' +
+          '<div class="history-list">' + (buildHistoryRowsHtml(sorted) || '<div class="modal-text">Nenhum registro.</div>') + '</div>' +
+          '<div class="modal-actions" style="margin-top:12px;">' +
+            '<button class="btn btn-ghost" id="archiveExportBtn">⬇ Exportar</button>' +
+            '<button class="btn btn-ghost" id="archiveModalClose">Fechar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    function close() { root.innerHTML = ""; }
+    document.getElementById("archiveModalClose").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) {
+      if (e.target.id === "modalOverlay") close();
+    });
+    document.getElementById("archiveExportBtn").addEventListener("click", function () {
+      var data = JSON.stringify({ month: label, entries: group.entries }, null, 2);
+      var filenameLabel = label.replace(/\s+/g, "-").replace(/[^\w-]/g, "");
+      var file = new File([data], "historico-" + filenameLabel + ".json", { type: "application/json" });
+      var url = URL.createObjectURL(file);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Histórico de " + label + " exportado");
+    });
   }
 
   var toastTimer = null;
