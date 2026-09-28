@@ -103,14 +103,14 @@
   .shelf-btn { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; border: none; cursor: pointer; background: transparent; text-align: left; width: 100%; color: #e7e5e4; }
   .shelf-btn:hover { background: #1c1917; }
   .shelf-btn.active { background: #292524; }
-  .shelf-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .shelf-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.35); }
   .shelf-name { flex: 1; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .shelf-count { font-size: 10px; color: #78716c; }
   .shelf-drop-target { outline: 2px dashed #15b8c9; outline-offset: -2px; background: rgba(21,184,201,0.08); border-radius: 8px; }
 
   .new-shelf-box { padding: 10px; background: #171614; border: 1px solid #292524; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
   .color-row { display: flex; gap: 5px; flex-wrap: wrap; }
-  .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+  .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25); }
   .color-dot.selected { border-color: #fafaf9; }
 
   .color-group { margin-bottom: 2px; border-radius: 8px; }
@@ -201,6 +201,19 @@
   .expiry-list-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 6px; border-bottom: 1px solid #1c1917; font-size: 13px; }
   .expiry-list-desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .expiry-list-date { color: #a8a29e; flex-shrink: 0; }
+  .pending-modal-box { max-width: 440px; max-height: 85vh; display: flex; flex-direction: column; }
+  .pending-category-list { display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
+  .pending-category-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; background: #0c0a09; color: #e7e5e4; border: 1px solid #292524; border-radius: 10px; text-align: left; cursor: pointer; }
+  .pending-category-btn:hover { background: #201e1b; }
+  .pending-category-icon { font-size: 15px; }
+  .pending-category-name { flex: 1; font-size: 13px; font-weight: 600; }
+  .pending-category-count { color: #a8a29e; font-size: 12px; }
+  .pending-list { overflow-y: auto; }
+  .pending-item-row { padding: 9px 4px; border-bottom: 1px solid #292524; }
+  .pending-item-main { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+  .pending-item-code { color: #a8a29e; flex-shrink: 0; }
+  .pending-item-desc { min-width: 0; overflow-wrap: anywhere; }
+  .pending-item-meta { color: #78716c; font-size: 10.5px; margin-top: 3px; }
   .history-list { display: flex; flex-direction: column; gap: 2px; max-height: 340px; overflow-y: auto; }
   .history-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 6px; border-bottom: 1px solid #1c1917; }
   .history-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
@@ -261,6 +274,13 @@
     #printArea .print-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     #printArea .print-items-table th, #printArea .print-items-table td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
     #printArea .print-items-table th { background: #eee; }
+    #printArea .expiry-print-title { font-size: 20px; margin-bottom: 4px; }
+    #printArea .expiry-print-date { color: #555; font-size: 11px; margin-bottom: 16px; }
+    #printArea .expiry-print-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #printArea .expiry-print-table th, #printArea .expiry-print-table td { border: 1px solid #999; padding: 7px 8px; text-align: left; }
+    #printArea .expiry-print-table th { background: #eee; }
+    #printArea .expiry-print-table td:nth-child(3) { text-align: center; width: 85px; }
+    #printArea .expiry-print-table td:nth-child(4) { text-align: center; width: 100px; }
     #printArea .print-items-table th:nth-child(3), #printArea .print-items-table td:nth-child(3),
     #printArea .print-items-table th:nth-child(4), #printArea .print-items-table td:nth-child(4) {
       text-align: center; width: 70px;
@@ -368,15 +388,10 @@
       <span class="options-item-icon">+</span>
       <span class="options-item-label">Criar prateleira</span>
     </button>
-    <button class="options-item" id="optExpiring">
-      <span class="options-item-icon" style="color:#eab308;">🔖</span>
-      <span class="options-item-label">Itens a Vencer</span>
-      <span class="options-item-badge" id="optExpiringCount">0</span>
-    </button>
-    <button class="options-item" id="optExpired">
-      <span class="options-item-icon" style="color:#ef4444;">⚠</span>
-      <span class="options-item-label">Itens Vencidos</span>
-      <span class="options-item-badge" id="optExpiredCount">0</span>
+    <button class="options-item" id="optPendencias">
+      <span class="options-item-icon" style="color:#f97316;">📋</span>
+      <span class="options-item-label">Pendências</span>
+      <span class="options-item-badge" id="optPendenciasCount">0</span>
     </button>
     <button class="options-item" id="importBtn">
       <span class="options-item-icon" style="color:#22c55e;">⬆</span>
@@ -444,7 +459,8 @@
     { name: "Marrom", value: "#78350f" },
     { name: "Preto", value: "#18181b" },
     { name: "Lima", value: "#65a30d" },
-    { name: "Magenta", value: "#c026d3" }
+    { name: "Magenta", value: "#c026d3" },
+    { name: "Branca", value: "#ffffff" }
   ];
 
   // Escolhe texto preto ou branco pro selo colorido do PDF, conforme o
@@ -468,7 +484,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v2.7";
+  var APP_VERSION = "Alpha v2.8";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -881,19 +897,32 @@
   function computeExpirySummary() {
     var vencendo = [];
     var vencidos = [];
+    var estoqueZerado = [];
+    var validadePendente = [];
     state.shelves.forEach(function (shelf) {
       shelf.items.forEach(function (item) {
+        var entry = {
+          code: item.code || "—",
+          description: item.description || "",
+          quantity: Number(item.quantity) || 0,
+          validade: item.validade || "",
+          shelfName: shelf.name || ""
+        };
+        if (entry.quantity <= 0) estoqueZerado.push(entry);
         var d = parseBRDate(item.validade);
-        if (!d) return;
+        if (!d) {
+          validadePendente.push(entry);
+          return;
+        }
         var days = daysUntil(d);
-        var entry = { description: item.description, validade: item.validade, days: days };
+        entry.days = days;
         if (days < 0) vencidos.push(entry);
         else if (days <= 30) vencendo.push(entry);
       });
     });
     vencendo.sort(function (a, b) { return a.days - b.days; });
     vencidos.sort(function (a, b) { return a.days - b.days; });
-    return { vencendo: vencendo, vencidos: vencidos };
+    return { vencendo: vencendo, vencidos: vencidos, estoqueZerado: estoqueZerado, validadePendente: validadePendente };
   }
 
   function renderExpiryBadges() {
@@ -921,22 +950,22 @@
       });
     }
 
-    document.getElementById("optExpiringCount").textContent = vencendo.length;
-    document.getElementById("optExpiredCount").textContent = vencidos.length;
+    document.getElementById("optPendenciasCount").textContent = vencendo.length + vencidos.length + summary.estoqueZerado.length + summary.validadePendente.length;
   }
 
   function openExpiryListModal(title, entries) {
     var root = document.getElementById("modalRoot");
     var rows = entries.map(function (e) {
-      return '<div class="expiry-list-row"><span class="expiry-list-desc">' + escapeHtml(e.description) + '</span><span class="expiry-list-date mono">' + escapeHtml(e.validade) + '</span></div>';
+      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + e.quantity + ' · Validade: ' + escapeHtml(e.validade || "Não informada") + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
     }).join("");
 
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
-        '<div class="modal-box" style="max-width:360px;">' +
+        '<div class="modal-box pending-modal-box">' +
           '<div class="modal-title">' + escapeHtml(title) + '</div>' +
-          '<div class="expiry-list">' + (rows || '<div class="modal-text">Nenhum item.</div>') + '</div>' +
+          '<div class="pending-list">' + (rows || '<div class="modal-text">Nenhum item.</div>') + '</div>' +
           '<div class="modal-actions" style="margin-top:12px;">' +
+            '<button class="btn btn-primary" id="expiryModalPrint"' + (entries.length ? '' : ' disabled') + '>Imprimir / PDF</button>' +
             '<button class="btn btn-ghost" id="expiryModalClose">Fechar</button>' +
           '</div>' +
         '</div>' +
@@ -944,9 +973,64 @@
 
     function close() { root.innerHTML = ""; }
     document.getElementById("expiryModalClose").addEventListener("click", close);
+    document.getElementById("expiryModalPrint").addEventListener("click", function () { printExpiryList(title, entries); });
     document.getElementById("modalOverlay").addEventListener("click", function (e) {
       if (e.target.id === "modalOverlay") close();
     });
+  }
+
+  function openPendenciasModal() {
+    var summary = computeExpirySummary();
+    var categories = [
+      { id: "vencidos", icon: "🔴", title: "Vencidos", items: summary.vencidos },
+      { id: "vencendo", icon: "🟡", title: "A vencer (próximos 30 dias)", items: summary.vencendo },
+      { id: "zerado", icon: "⚪", title: "Estoque zerado", items: summary.estoqueZerado },
+      { id: "validade", icon: "⚪", title: "Pendência na validade", items: summary.validadePendente }
+    ];
+    var root = document.getElementById("modalRoot");
+    root.innerHTML = '<div class="modal-overlay" id="modalOverlay"><div class="modal-box pending-modal-box">' +
+      '<div class="modal-title">Pendências</div><div class="modal-text">Itens separados por situação. Toque em uma categoria para ver a lista.</div>' +
+      '<div class="pending-category-list">' + categories.map(function (category) {
+        return '<button class="pending-category-btn" data-pending-category="' + category.id + '"><span class="pending-category-icon">' + category.icon + '</span><span class="pending-category-name">' + category.title + '</span><span class="pending-category-count mono">' + category.items.length + '</span></button>';
+      }).join("") + '</div><div class="modal-actions" style="margin-top:12px;"><button class="btn btn-ghost" id="pendingModalClose">Fechar</button></div></div></div>';
+    function close() { root.innerHTML = ""; }
+    document.getElementById("pendingModalClose").addEventListener("click", close);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) { if (e.target.id === "modalOverlay") close(); });
+    root.querySelectorAll("[data-pending-category]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var latest = computeExpirySummary();
+        var id = button.getAttribute("data-pending-category");
+        var category = categories.find(function (item) { return item.id === id; });
+        var entries = id === "vencidos" ? latest.vencidos : id === "vencendo" ? latest.vencendo : id === "zerado" ? latest.estoqueZerado : latest.validadePendente;
+        openPendingCategoryModal(category.title, entries, id === "vencidos" || id === "vencendo");
+      });
+    });
+  }
+
+  function openPendingCategoryModal(title, entries, printable) {
+    var root = document.getElementById("modalRoot");
+    var rows = entries.map(function (e) {
+      var validity = e.validade || "Não informada";
+      if (e.validade && !parseBRDate(e.validade)) validity = "Inválida: " + e.validade;
+      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + e.quantity + ' · Validade: ' + escapeHtml(validity) + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
+    }).join("");
+    root.innerHTML = '<div class="modal-overlay" id="modalOverlay"><div class="modal-box pending-modal-box">' +
+      '<div class="modal-title">' + escapeHtml(title) + '</div><div class="pending-list">' + (rows || '<div class="modal-text">Nenhum item nesta categoria.</div>') + '</div>' +
+      '<div class="modal-actions" style="margin-top:12px;">' + (printable ? '<button class="btn btn-primary" id="pendingCategoryPrint"' + (entries.length ? '' : ' disabled') + '>Imprimir / PDF</button>' : '') +
+      '<button class="btn btn-ghost" id="pendingCategoryClose">Voltar</button></div></div></div>';
+    document.getElementById("pendingCategoryClose").addEventListener("click", openPendenciasModal);
+    document.getElementById("modalOverlay").addEventListener("click", function (e) { if (e.target.id === "modalOverlay") openPendenciasModal(); });
+    if (printable) document.getElementById("pendingCategoryPrint").addEventListener("click", function () { printExpiryList(title, entries); });
+  }
+
+  function printExpiryList(title, entries) {
+    var printArea = document.getElementById("printArea");
+    var rows = entries.map(function (item) {
+      return '<tr><td>' + escapeHtml(item.code) + '</td><td>' + escapeHtml(item.description) + '</td><td>' + item.quantity + '</td><td>' + escapeHtml(item.validade || "Não informada") + '</td></tr>';
+    }).join("");
+    printArea.innerHTML = '<h1 class="expiry-print-title">' + escapeHtml(title) + '</h1><div class="expiry-print-date">Gerado em ' + todayBR() + ' · ' + entries.length + (entries.length === 1 ? ' item' : ' itens') + '</div>' +
+      '<table class="expiry-print-table"><thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th><th>Validade</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    window.print();
   }
 
   function renderSidebar() {
@@ -2266,15 +2350,7 @@
     openShelfFormModal(null);
   });
 
-  document.getElementById("optExpiring").addEventListener("click", function () {
-    var summary = computeExpirySummary();
-    openExpiryListModal("A vencer (próximos 30 dias)", summary.vencendo);
-  });
-
-  document.getElementById("optExpired").addEventListener("click", function () {
-    var summary = computeExpirySummary();
-    openExpiryListModal("Itens vencidos", summary.vencidos);
-  });
+  document.getElementById("optPendencias").addEventListener("click", openPendenciasModal);
 
   document.getElementById("itemFormBack").addEventListener("click", function () {
     closeItemFormPage();
