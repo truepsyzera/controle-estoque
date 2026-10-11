@@ -30,6 +30,12 @@
   .app-splash-title { font-size: 13px; font-weight: 800; letter-spacing: 0.05em; color: #e7e5e4; text-align: center; }
   .app-splash-version { font-size: 11px; color: #15b8c9; background: rgba(21,184,201,0.12); padding: 2px 8px; border-radius: 5px; }
   body { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* No celular isso tudo é só um "passe direto", sem mudança visual. O
+     menu lateral de verdade só aparece no breakpoint de desktop/tablet. */
+  .app-shell { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .app-main-col { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+  .desktop-sidenav { display: none; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
   input, select, button { font-family: inherit; }
@@ -308,6 +314,33 @@
     .field label { display: none; }
     .sidebar { height: calc(100vh - 50px); }
   }
+
+  /* Menu lateral de desktop/tablet — escondido por padrão (ver
+     .desktop-sidenav acima), só aparece a partir daqui. */
+  .desktop-sidenav-brand { padding: 6px 10px 20px; }
+  .desktop-sidenav-logo { height: 30px; width: auto; display: block; }
+  .desktop-sidenav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: transparent; border: none; color: #a8a29e; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; width: 100%; }
+  .desktop-sidenav-btn:hover { background: #171614; color: #e7e5e4; }
+  .desktop-sidenav-btn.active { background: rgba(21,184,201,0.15); color: #15b8c9; }
+
+  @media (min-width: 880px) {
+    .app-shell { flex-direction: row; }
+    .desktop-sidenav { display: flex; flex-direction: column; gap: 2px; width: 212px; flex-shrink: 0; background: #0c0a09; border-right: 1px solid #1c1917; padding: 18px 12px; }
+    .bottom-nav { display: none; }
+    .app-main-col { overflow: hidden; }
+
+    /* Painel Início em 2 colunas, aproveitando a largura da tela */
+    #page-inicio { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; align-content: start; }
+    #page-inicio > .page-header, #page-inicio > .dash-stats-row { grid-column: 1 / -1; }
+
+    .sidebar { width: 260px; }
+    .items-list { padding: 10px 20px 20px; }
+
+    /* A logo já aparece no menu lateral — no cabeçalho, só as
+       estatísticas, pra não duplicar. */
+    .brand-top { display: none; }
+    header { padding: 16px 20px; }
+  }
 </style>
 </head>
 <body>
@@ -318,6 +351,27 @@
   <div class="app-splash-version mono" id="appSplashVersion"></div>
 </div>
 
+<div class="app-shell">
+<nav class="desktop-sidenav">
+  <div class="desktop-sidenav-brand"><img class="desktop-sidenav-logo" src="assets/logo.png" alt="Denis - Controle de Estoque"></div>
+  <button class="desktop-sidenav-btn active" data-tab="inicio">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="desktop-sidenav-btn" data-tab="movimentacao">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>
+    <span>Movimentação</span>
+  </button>
+  <button class="desktop-sidenav-btn" data-tab="estoque">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+    <span>Estoque</span>
+  </button>
+  <button class="desktop-sidenav-btn" data-tab="opcoes">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Opções</span>
+  </button>
+</nav>
+<div class="app-main-col">
 <header>
   <div class="brand">
     <div class="brand-top">
@@ -439,6 +493,8 @@
     <span>Opções</span>
   </button>
 </nav>
+</div>
+</div>
 
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
@@ -488,7 +544,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v2.9";
+  var APP_VERSION = "Alpha v3.0";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -2308,14 +2364,14 @@
     state.activeTab = tab;
     document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
     document.getElementById("page-" + tab).classList.add("active");
-    document.querySelectorAll(".bottom-nav-btn").forEach(function (b) {
+    document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-tab") === tab);
     });
     if (tab === "inicio") renderInicioPage();
     if (tab === "movimentacao") renderMovimentacaoPage();
   }
 
-  document.querySelectorAll(".bottom-nav-btn").forEach(function (btn) {
+  document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn").forEach(function (btn) {
     btn.addEventListener("click", function () { setActiveTab(btn.getAttribute("data-tab")); });
   });
 
