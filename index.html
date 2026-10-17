@@ -175,6 +175,9 @@
 
   .item-row { display: flex; align-items: center; gap: 7px; padding: 12px 10px; border-radius: 16px; background: #171614; border: 1px solid #292524; margin-bottom: 8px; cursor: grab; }
   .item-row:hover { background: #201e1b; border-color: #3f3b38; }
+  .item-row.duplicate-code { background: #241633; border-color: #8b5cf6; }
+  .item-row.duplicate-code:hover { background: #322047; border-color: #a78bfa; }
+  .item-row.duplicate-code .item-code { color: #e9d5ff; background: #3b2458; }
   .item-row.dragging { opacity: 0.4; }
   .grip { color: #44403c; flex-shrink: 0; font-size: 14px; }
   .item-code-wrap { flex-shrink: 0; width: 56px; overflow: hidden; }
@@ -366,6 +369,9 @@
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
     <span>Estoque</span>
   </button>
+  <button class="desktop-sidenav-btn" data-tab="divergencias">
+    <span style="font-size:17px;line-height:1;">⚠</span><span>Divergências</span>
+  </button>
   <button class="desktop-sidenav-btn" data-tab="opcoes">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>Opções</span>
@@ -439,6 +445,11 @@
   </div>
 </div>
 
+<div class="app-page" id="page-divergencias">
+  <div class="page-header"><div class="page-title">Divergências</div><div class="page-subtitle">Itens com código duplicado</div></div>
+  <div class="items-list" id="divergenciasList"></div>
+</div>
+
 <div class="app-page" id="page-opcoes">
   <div class="page-header"><div class="page-title">Opções</div></div>
   <div class="options-list">
@@ -487,6 +498,10 @@
   <button class="bottom-nav-btn" data-tab="estoque">
     <span class="bn-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
     <span>Estoque</span>
+  </button>
+  <button class="bottom-nav-btn" data-tab="divergencias">
+    <span class="bn-icon" style="font-size:19px;line-height:19px;">⚠</span>
+    <span>Divergências</span>
   </button>
   <button class="bottom-nav-btn" data-tab="opcoes">
     <span class="bn-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
@@ -544,7 +559,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.0";
+  var APP_VERSION = "Alpha v3.1";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -864,12 +879,29 @@
     return state.shelves.find(function (s) { return s.id === id; });
   }
 
+  function normalizedItemCode(code) {
+    var value = String(code == null ? "" : code).trim().toLocaleLowerCase();
+    return value && value !== "—" ? value : "";
+  }
+
+  function getDuplicateCodeCounts() {
+    var counts = {};
+    state.shelves.forEach(function (shelf) {
+      shelf.items.forEach(function (item) {
+        var code = normalizedItemCode(item.code);
+        if (code) counts[code] = (counts[code] || 0) + 1;
+      });
+    });
+    return counts;
+  }
+
   function render() {
     renderHeaderStats();
     renderSidebar();
     renderToolbar();
     renderAddItemForm();
     renderItemsList();
+    renderItemsList("divergenciasList", true);
     updateSidebarBackdrop();
     renderInicioPage();
     renderMovimentacaoPage();
@@ -1504,24 +1536,28 @@
     });
   }
 
-  function renderItemsList() {
-    var container = document.getElementById("itemsList");
+  function renderItemsList(targetId, duplicateOnly) {
+    var container = document.getElementById(targetId || "itemsList");
+    if (!container) return;
     var shelf = getSelectedShelf();
+    var duplicateCounts = getDuplicateCodeCounts();
 
-    if (!shelf) {
+    if (!duplicateOnly && !shelf) {
       container.innerHTML = '<div class="empty-state"><div class="big-icon">▤</div><div>Crie uma prateleira para começar a adicionar itens.</div></div>';
       return;
     }
 
-    var q = (state.search || "").trim().toLowerCase();
-    var isGlobal = state.searchScope === "all";
+    var q = duplicateOnly ? "" : (state.search || "").trim().toLowerCase();
+    var isGlobal = duplicateOnly || state.searchScope === "all";
 
     // Monta uma lista de pares {item, shelf} — na busca "Esta" só da
     // prateleira atual, na busca "Todas" juntando todas as prateleiras.
     var pairs = [];
-    if (isGlobal) {
+    if (duplicateOnly || isGlobal) {
       state.shelves.forEach(function (s) {
-        s.items.forEach(function (i) { pairs.push({ item: i, shelf: s }); });
+        s.items.forEach(function (i) {
+          if (!duplicateOnly || (duplicateCounts[normalizedItemCode(i.code)] || 0) > 1) pairs.push({ item: i, shelf: s });
+        });
       });
     } else {
       shelf.items.forEach(function (i) { pairs.push({ item: i, shelf: shelf }); });
@@ -1532,13 +1568,13 @@
       return p.item.description.toLowerCase().indexOf(q) !== -1 || p.item.code.toLowerCase().indexOf(q) !== -1;
     });
 
-    if (isGlobal && !q) {
+    if (isGlobal && !q && !duplicateOnly) {
       container.innerHTML = '<div class="empty-state"><div class="big-icon">🔍</div><div>Digite algo para buscar em todas as prateleiras.</div></div>';
       return;
     }
 
     if (filtered.length === 0) {
-      var msg = (isGlobal ? state.shelves : [shelf]).every(function (s) { return s.items.length === 0; })
+      var msg = duplicateOnly ? "Nenhum código duplicado encontrado." : (isGlobal ? state.shelves : [shelf]).every(function (s) { return s.items.length === 0; })
         ? "Nenhum item cadastrado ainda."
         : "Nada encontrado para essa busca.";
       container.innerHTML = '<div class="empty-state"><div class="big-icon">📦</div><div>' + msg + '</div></div>';
@@ -1561,7 +1597,8 @@
           '<button class="btn btn-ghost btn-icon" data-cancel-edit="' + item.id + '">✕</button>' +
         '</div>';
       } else {
-        html += '<div class="item-row" data-item-id="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '" draggable="true">' +
+        var duplicateClass = (duplicateCounts[normalizedItemCode(item.code)] || 0) > 1 ? ' duplicate-code' : '';
+        html += '<div class="item-row' + duplicateClass + '" data-item-id="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '" draggable="true">' +
           '<span class="grip">⠿</span>' +
           (isGlobal ? '<span class="item-shelf-tag"><span class="shelf-dot" style="width:7px;height:7px;background:' + ownerShelf.color + '"></span>' + escapeHtml(ownerShelf.name) + '</span>' : '') +
           '<div class="item-code-wrap"><div class="item-code mono" data-hscroll>' + escapeHtml(item.code) + '</div></div>' +
@@ -1602,7 +1639,7 @@
     container.querySelectorAll("[data-cancel-edit]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.editingItemId = null;
-        renderItemsList();
+        renderItemsList(targetId, duplicateOnly);
       });
     });
     container.querySelectorAll("[data-save-edit]").forEach(function (btn) {
@@ -1692,6 +1729,7 @@
     renderInicioPage();
     renderSidebar();
     renderItemsList();
+    renderItemsList("divergenciasList", true);
   }
 
   function removeItem(shelfId, itemId) {
@@ -1706,6 +1744,7 @@
     renderInicioPage();
     renderSidebar();
     renderItemsList();
+    renderItemsList("divergenciasList", true);
     showToast("Item removido");
   }
 
@@ -2065,7 +2104,7 @@
     }
   }
 
-  function saveItemForm() {
+  function saveItemForm(duplicateConfirmed) {
     var code = document.getElementById("ifCode").value.trim();
     var description = document.getElementById("ifDesc").value.trim();
     var quantity = parseInt(document.getElementById("ifQty").value, 10);
@@ -2077,6 +2116,24 @@
     if (!newShelfId) { showToast("Escolha uma prateleira"); return; }
 
     var isEdit = state.itemFormMode === "edit";
+
+    if (!isEdit && !duplicateConfirmed) {
+      var codeKey = normalizedItemCode(code);
+      var matches = codeKey ? state.shelves.reduce(function (total, existingShelf) {
+        return total + existingShelf.items.filter(function (existingItem) {
+          return normalizedItemCode(existingItem.code) === codeKey;
+        }).length;
+      }, 0) : 0;
+      if (matches) {
+        openConfirmModal(
+          "Código já cadastrado",
+          'Já existe ' + (matches === 1 ? 'um item' : matches + ' itens') + ' com o código "' + code + '". Deseja adicionar mesmo assim? Os itens ficarão destacados em roxo e aparecerão em Divergências.',
+          function () { closeModal(); saveItemForm(true); },
+          "Adicionar mesmo assim"
+        );
+        return;
+      }
+    }
 
     if (isEdit) {
       var oldShelf = findShelfById(state.itemFormShelfId);
@@ -2247,7 +2304,7 @@
     });
   }
 
-  function openConfirmModal(title, text, onConfirm) {
+  function openConfirmModal(title, text, onConfirm, confirmLabel) {
     var root = document.getElementById("modalRoot");
     root.innerHTML =
       '<div class="modal-overlay" id="modalOverlay">' +
@@ -2256,7 +2313,7 @@
           '<div class="modal-text">' + escapeHtml(text) + '</div>' +
           '<div class="modal-actions">' +
             '<button class="btn btn-ghost" id="modalCancel">Cancelar</button>' +
-            '<button class="btn btn-danger" id="modalConfirm">Remover</button>' +
+            '<button class="btn btn-danger" id="modalConfirm">' + escapeHtml(confirmLabel || "Remover") + '</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -2369,6 +2426,7 @@
     });
     if (tab === "inicio") renderInicioPage();
     if (tab === "movimentacao") renderMovimentacaoPage();
+    if (tab === "divergencias") renderItemsList("divergenciasList", true);
   }
 
   document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn").forEach(function (btn) {
