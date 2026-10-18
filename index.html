@@ -559,43 +559,82 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.1";
+  var APP_VERSION = "Alpha v3.2";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
 
-  // Categorização automática do Gráfico 3 (Unidades por Categoria), lendo
-  // palavras-chave na descrição do item. Prioridade: tipo de recipiente >
-  // volume > peso > "Outros" — cada item cai em UMA categoria só.
+  // Categorias fechadas do gráfico: recipiente e medida precisam aparecer
+  // juntos; válvulas exigem o tipo, acabamento e cor completos. Cada item
+  // corresponde a uma única categoria ou ao fallback.
   var CATEGORY_PATTERNS = [
-    [/\bfrasco\b/i, "Frasco"],
-    [/\bpote\b/i, "Pote"],
-    [/\bv[aá]lvula\b/i, "Válvula"],
-    [/\b400\s*ml\b/i, "400 ml"],
-    [/\b300\s*ml\b/i, "300 ml"],
-    [/\b120\s*ml\b/i, "120 ml"],
-    [/\b60\s*ml\b/i, "60 ml"],
-    [/\b30\s*ml\b/i, "30 ml"],
-    [/\b15\s*ml\b/i, "15 ml"],
-    [/\b1[,.]5\s*kg\b/i, "1,5 kg"],
-    [/\b1\s*kg\b/i, "1 kg"],
-    [/\b500\s*g\b/i, "500 g"],
-    [/\b400\s*g\b/i, "400 g"],
-    [/\b250\s*g\b/i, "250 g"]
+    { label: "Frasco 30ml", type: /\bfrasco\b/, size: /\b30\s*ml\b/ },
+    { label: "Frasco 60ml", type: /\bfrasco\b/, size: /\b60\s*ml\b/ },
+    { label: "Frasco 120ml", type: /\bfrasco\b/, size: /\b120\s*ml\b/ },
+    { label: "Frasco 200ml", type: /\bfrasco\b/, size: /\b200\s*ml\b/ },
+    { label: "Frasco 250ml", type: /\bfrasco\b/, size: /\b250\s*ml\b/ },
+    { label: "Frasco 300ml", type: /\bfrasco\b/, size: /\b300\s*ml\b/ },
+    { label: "Frasco 400ml", type: /\bfrasco\b/, size: /\b400\s*ml\b/ },
+    { label: "Frasco 1LT", type: /\bfrasco\b/, size: /\b1\s*lt\b/ },
+    { label: "Pote 250g", type: /\bpote\b/, size: /\b250\s*g\b/ },
+    { label: "Pote 300g", type: /\bpote\b/, size: /\b300\s*g\b/ },
+    { label: "Pote 400g", type: /\bpote\b/, size: /\b400\s*g\b/ },
+    { label: "Pote 500g", type: /\bpote\b/, size: /\b500\s*g\b/ },
+    { label: "Pote 1kg", type: /\bpote\b/, size: /\b1\s*kg\b/ },
+    { label: "Válvula Spray Hot Dourado", match: /\bvalvula spray hot dourado\b/ },
+    { label: "Válvula Spray Hot Prata", match: /\bvalvula spray hot prata\b/ },
+    { label: "Válvula Dosadora Hot Dourado", match: /\bvalvula dosadora hot dourado\b/ },
+    { label: "Válvula Dosadora Hot Prata", match: /\bvalvula dosadora hot prata\b/ },
+    { label: "Válvula Spray Transparente", match: /\bvalvula spray transparente\b/ },
+    { label: "Válvula Dosadora Transparente", match: /\bvalvula dosadora transparente\b/ },
+    { label: "Válvula Alta Vasão Preta", match: /\bvalvula alta vasao preta\b/ },
+    { label: "Válvula Alta Vasão Branca", match: /\bvalvula alta vasao branca\b/ }
   ];
+  var UNCATEGORIZED_LABEL = "Outros / Não Classificados";
   var CATEGORY_COLOR_MAP = {
-    "Frasco": "#15b8c9", "Pote": "#8b5cf6", "Válvula": "#f97316",
-    "400 ml": "#eab308", "300 ml": "#22c55e", "120 ml": "#3b82f6",
-    "60 ml": "#ec4899", "30 ml": "#a855f7", "15 ml": "#f43f5e",
-    "1,5 kg": "#84cc16", "1 kg": "#06b6d4", "500 g": "#d946ef",
-    "400 g": "#f59e0b", "250 g": "#10b981", "Outros": "#64748b"
+    "Frasco 30ml": "#15b8c9", "Frasco 60ml": "#3b82f6", "Frasco 120ml": "#22c55e",
+    "Frasco 200ml": "#84cc16", "Frasco 250ml": "#eab308", "Frasco 300ml": "#f97316",
+    "Frasco 400ml": "#ec4899", "Frasco 1LT": "#8b5cf6", "Pote 250g": "#06b6d4",
+    "Pote 300g": "#f43f5e", "Pote 400g": "#a855f7", "Pote 500g": "#10b981",
+    "Pote 1kg": "#d946ef", "Válvula Spray Hot Dourado": "#f59e0b",
+    "Válvula Spray Hot Prata": "#94a3b8", "Válvula Dosadora Hot Dourado": "#ca8a04",
+    "Válvula Dosadora Hot Prata": "#64748b", "Válvula Spray Transparente": "#38bdf8",
+    "Válvula Dosadora Transparente": "#818cf8", "Válvula Alta Vasão Preta": "#a1a1aa",
+    "Válvula Alta Vasão Branca": "#f8fafc", "Outros / Não Classificados": "#78716c"
   };
 
+  function normalizeCategoryText(value) {
+    return String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
   function categorizeItemUnits(description) {
+    var text = normalizeCategoryText(description);
     for (var i = 0; i < CATEGORY_PATTERNS.length; i++) {
-      if (CATEGORY_PATTERNS[i][0].test(description)) return CATEGORY_PATTERNS[i][1];
+      var rule = CATEGORY_PATTERNS[i];
+      if (rule.match ? rule.match.test(text) : rule.type.test(text) && rule.size.test(text)) return rule.label;
     }
-    return "Outros";
+    return UNCATEGORIZED_LABEL;
+  }
+
+  function getCategoryUnitTotals(shelves) {
+    var totals = {};
+    (shelves || []).forEach(function (shelf) {
+      (shelf.items || []).forEach(function (item) {
+        var category = categorizeItemUnits(item.description);
+        var quantity = Number(item.quantity) || 0;
+        totals[category] = (totals[category] || 0) + quantity;
+      });
+    });
+    return Object.keys(totals).map(function (label) {
+      return { label: label, value: totals[label] };
+    }).filter(function (entry) { return entry.value > 0; })
+      .sort(function (a, b) {
+        var byQuantity = b.value - a.value;
+        if (byQuantity) return byQuantity;
+        var aIndex = CATEGORY_PATTERNS.findIndex(function (rule) { return rule.label === a.label; });
+        var bIndex = CATEGORY_PATTERNS.findIndex(function (rule) { return rule.label === b.label; });
+        return (aIndex < 0 ? CATEGORY_PATTERNS.length : aIndex) - (bIndex < 0 ? CATEGORY_PATTERNS.length : bIndex);
+      });
   }
 
   var DOC_INFO = {
@@ -931,20 +970,9 @@
     document.getElementById("dashExpiredItems").textContent = expirySummary.vencidos.length;
     document.getElementById("optPendenciasCount").textContent = expirySummary.vencendo.length + expirySummary.vencidos.length + expirySummary.estoqueZerado.length + expirySummary.validadePendente.length;
 
-    // Gráfico 3 — Unidades por Categoria: lê palavras-chave da descrição de
-    // cada item e soma as quantidades por categoria (uma categoria só por
-    // item, na ordem recipiente > volume > peso > Outros).
-    var catTotals = {};
-    state.shelves.forEach(function (s) {
-      s.items.forEach(function (it) {
-        var cat = categorizeItemUnits(it.description);
-        catTotals[cat] = (catTotals[cat] || 0) + (it.quantity || 0);
-      });
-    });
-    var catEntries = Object.keys(catTotals)
-      .map(function (k) { return { label: k, value: catTotals[k] }; })
-      .filter(function (e) { return e.value > 0; })
-      .sort(function (a, b) { return b.value - a.value; });
+    // O gráfico soma as unidades em estoque por categoria oficial, sem
+    // criar fatias genéricas de tamanho ou tipo.
+    var catEntries = getCategoryUnitTotals(state.shelves);
     var totalUnits = catEntries.reduce(function (acc, e) { return acc + e.value; }, 0);
 
     var donutEl = document.getElementById("dashDonut");
