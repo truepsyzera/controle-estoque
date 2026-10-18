@@ -559,52 +559,77 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.2";
+  var APP_VERSION = "Alpha v3.3";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
 
-  // Categorias fechadas do gráfico: recipiente e medida precisam aparecer
-  // juntos; válvulas exigem o tipo, acabamento e cor completos. Cada item
-  // corresponde a uma única categoria ou ao fallback.
+  // Lista oficial do gráfico. Frascos e potes exigem tipo + medida; as
+  // demais categorias exigem o nome composto ou um dos nomes alternativos.
+  // Cada item corresponde a uma única categoria ou ao fallback.
   var CATEGORY_PATTERNS = [
     { label: "Frasco 30ml", type: /\bfrasco\b/, size: /\b30\s*ml\b/ },
     { label: "Frasco 60ml", type: /\bfrasco\b/, size: /\b60\s*ml\b/ },
     { label: "Frasco 120ml", type: /\bfrasco\b/, size: /\b120\s*ml\b/ },
+    { label: "Frasco 150ml", type: /\bfrasco\b/, size: /\b150\s*ml\b/ },
     { label: "Frasco 200ml", type: /\bfrasco\b/, size: /\b200\s*ml\b/ },
     { label: "Frasco 250ml", type: /\bfrasco\b/, size: /\b250\s*ml\b/ },
     { label: "Frasco 300ml", type: /\bfrasco\b/, size: /\b300\s*ml\b/ },
     { label: "Frasco 400ml", type: /\bfrasco\b/, size: /\b400\s*ml\b/ },
+    { label: "Frasco 500ml", type: /\bfrasco\b/, size: /\b500\s*ml\b/ },
     { label: "Frasco 1LT", type: /\bfrasco\b/, size: /\b1\s*lt\b/ },
     { label: "Pote 250g", type: /\bpote\b/, size: /\b250\s*g\b/ },
     { label: "Pote 300g", type: /\bpote\b/, size: /\b300\s*g\b/ },
     { label: "Pote 400g", type: /\bpote\b/, size: /\b400\s*g\b/ },
     { label: "Pote 500g", type: /\bpote\b/, size: /\b500\s*g\b/ },
-    { label: "Pote 1kg", type: /\bpote\b/, size: /\b1\s*kg\b/ },
+    { label: "Pote 1kg / 1L", type: /\bpote\b/, size: /\b1\s*(?:kg|l)\b/ },
     { label: "Válvula Spray Hot Dourado", match: /\bvalvula spray hot dourado\b/ },
     { label: "Válvula Spray Hot Prata", match: /\bvalvula spray hot prata\b/ },
     { label: "Válvula Dosadora Hot Dourado", match: /\bvalvula dosadora hot dourado\b/ },
     { label: "Válvula Dosadora Hot Prata", match: /\bvalvula dosadora hot prata\b/ },
     { label: "Válvula Spray Transparente", match: /\bvalvula spray transparente\b/ },
     { label: "Válvula Dosadora Transparente", match: /\bvalvula dosadora transparente\b/ },
-    { label: "Válvula Alta Vasão Preta", match: /\bvalvula alta vasao preta\b/ },
-    { label: "Válvula Alta Vasão Branca", match: /\bvalvula alta vasao branca\b/ }
+    { label: "Válvula Alta Vasao Preta", match: /\bvalvula alta vasao preta\b/ },
+    { label: "Válvula Alta Vasao Branca", match: /\bvalvula alta vasao branca\b/ },
+    { label: "Válvula Pump / Dispersadora", match: /\bvalvula\b.*\b(?:pump|dispersadora)\b/ },
+    { label: "Tampa Flip Top", match: /\btampa flip top\b/ },
+    { label: "Tampa Disc Top", match: /\btampa disc top\b/ },
+    { label: "Tampa Push Pull", match: /\btampa push pull\b/ },
+    { label: "Tampa de Rosca", match: /\btampa de rosca\b/ },
+    { label: "Batoque / Gotejador", match: /\b(?:batoque|gotejador)\b/ },
+    { label: "Sobretampa", match: /\bsobretampa\b/ },
+    { label: "Bisnaga", match: /\bbisnaga\b/ },
+    { label: "Frasnaga", match: /\bfrasnaga\b/ },
+    { label: "Caixa de Papelão", match: /\bcaixa de papelao\b/ },
+    { label: "Cartucho de Kit", match: /\bcartucho de kit\b/ },
+    { label: "Cartucho Unitário", match: /\bcartucho unitario\b/ },
+    { label: "Display / Colmeia", match: /\b(?:display|colmeia)\b/ },
+    { label: "Conjunto Conta Gotas", match: /\bconjunto conta gotas\b/ },
+    { label: "Anel Decorativo", match: /\banel decorativo\b/ }
   ];
   var UNCATEGORIZED_LABEL = "Outros / Não Classificados";
   var CATEGORY_COLOR_MAP = {
     "Frasco 30ml": "#15b8c9", "Frasco 60ml": "#3b82f6", "Frasco 120ml": "#22c55e",
-    "Frasco 200ml": "#84cc16", "Frasco 250ml": "#eab308", "Frasco 300ml": "#f97316",
-    "Frasco 400ml": "#ec4899", "Frasco 1LT": "#8b5cf6", "Pote 250g": "#06b6d4",
-    "Pote 300g": "#f43f5e", "Pote 400g": "#a855f7", "Pote 500g": "#10b981",
-    "Pote 1kg": "#d946ef", "Válvula Spray Hot Dourado": "#f59e0b",
-    "Válvula Spray Hot Prata": "#94a3b8", "Válvula Dosadora Hot Dourado": "#ca8a04",
-    "Válvula Dosadora Hot Prata": "#64748b", "Válvula Spray Transparente": "#38bdf8",
-    "Válvula Dosadora Transparente": "#818cf8", "Válvula Alta Vasão Preta": "#a1a1aa",
-    "Válvula Alta Vasão Branca": "#f8fafc", "Outros / Não Classificados": "#78716c"
+    "Frasco 150ml": "#0ea5e9", "Frasco 200ml": "#84cc16", "Frasco 250ml": "#eab308",
+    "Frasco 300ml": "#f97316", "Frasco 400ml": "#ec4899", "Frasco 500ml": "#a855f7",
+    "Frasco 1LT": "#8b5cf6", "Pote 250g": "#06b6d4", "Pote 300g": "#f43f5e",
+    "Pote 400g": "#d946ef", "Pote 500g": "#10b981", "Pote 1kg / 1L": "#7c3aed",
+    "Válvula Spray Hot Dourado": "#f59e0b", "Válvula Spray Hot Prata": "#94a3b8",
+    "Válvula Dosadora Hot Dourado": "#ca8a04", "Válvula Dosadora Hot Prata": "#64748b",
+    "Válvula Spray Transparente": "#38bdf8", "Válvula Dosadora Transparente": "#818cf8",
+    "Válvula Alta Vasao Preta": "#a1a1aa", "Válvula Alta Vasao Branca": "#f8fafc",
+    "Válvula Pump / Dispersadora": "#fb7185", "Tampa Flip Top": "#c084fc",
+    "Tampa Disc Top": "#4ade80", "Tampa Push Pull": "#facc15", "Tampa de Rosca": "#14b8a6",
+    "Batoque / Gotejador": "#fb923c", "Sobretampa": "#e879f9", "Bisnaga": "#34d399",
+    "Frasnaga": "#60a5fa", "Caixa de Papelão": "#a3e635", "Cartucho de Kit": "#f472b6",
+    "Cartucho Unitário": "#fbbf24", "Display / Colmeia": "#2dd4bf",
+    "Conjunto Conta Gotas": "#e11d48", "Anel Decorativo": "#fca5a5",
+    "Outros / Não Classificados": "#78716c"
   };
 
   function normalizeCategoryText(value) {
-    return String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
   }
 
   function categorizeItemUnits(description) {
