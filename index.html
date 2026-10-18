@@ -326,23 +326,99 @@
   .desktop-sidenav-btn:hover { background: #171614; color: #e7e5e4; }
   .desktop-sidenav-btn.active { background: rgba(21,184,201,0.15); color: #15b8c9; }
 
-  @media (min-width: 880px) {
-    .app-shell { flex-direction: row; }
-    .desktop-sidenav { display: flex; flex-direction: column; gap: 2px; width: 212px; flex-shrink: 0; background: #0c0a09; border-right: 1px solid #1c1917; padding: 18px 12px; }
+  .desktop-header-content { display: none; }
+  .desktop-dashboard { display: none; }
+  .desktop-only-option { display: none; }
+
+  @media (min-width: 768px) {
+    .app-shell { flex-direction: row; height: 100vh; height: 100dvh; }
+    .desktop-sidenav { display: flex; flex-direction: column; gap: 5px; width: 194px; flex: 0 0 194px; height: 100vh; height: 100dvh; position: sticky; top: 0; background: #100f0e; border-right: 1px solid #292524; padding: 22px 12px; }
     .bottom-nav { display: none; }
-    .app-main-col { overflow: hidden; }
-
-    /* Painel Início em 2 colunas, aproveitando a largura da tela */
-    #page-inicio { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; align-content: start; }
-    #page-inicio > .page-header, #page-inicio > .dash-stats-row { grid-column: 1 / -1; }
-
+    .app-main-col { overflow: hidden; height: 100vh; height: 100dvh; }
+    .app-main-col > header { height: 72px; min-height: 72px; padding: 12px 24px; background: #0c0a09; border-bottom: 1px solid #1c1917; flex-wrap: nowrap; }
+    .app-main-col > header .brand { display: none; }
+    .desktop-header-content { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; }
+    .desktop-search { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 680px; height: 42px; padding: 0 14px; background: #171614; border: 1px solid #292524; border-radius: 13px; color: #78716c; }
+    .desktop-search svg { flex: 0 0 17px; }
+    .desktop-search input { border: 0; outline: 0; background: transparent; color: #e7e5e4; width: 100%; font-size: 13px; }
+    .desktop-search input::placeholder { color: #78716c; }
+    .desktop-notification { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 40px; border: 0; border-radius: 11px; background: transparent; color: #a8a29e; cursor: pointer; }
+    .desktop-notification:hover { background: #1c1917; color: #f5f5f4; }
+    .desktop-sidenav-brand { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 8px; margin: 0 0 12px; color: #f5f5f4; font-weight: 800; font-size: 16px; }
+    .desktop-brand-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: #f4b400; color: #1c1917; }
+    .desktop-brand-version { margin-left: auto; color: #78716c; font-size: 9px; font-weight: 500; }
+    .desktop-sidenav-btn { display: flex; align-items: center; gap: 11px; min-height: 38px; padding: 9px 10px; border-radius: 9px; background: transparent; border: 0; color: #a8a29e; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; width: 100%; }
+    .desktop-sidenav-btn svg { width: 16px; height: 16px; flex: 0 0 16px; }
+    .desktop-sidenav-btn:hover { background: #1c1917; color: #f5f5f4; }
+    .desktop-sidenav-btn.active { background: rgba(245, 158, 11, 0.16); color: #f5f5f4; }
+    .desktop-sidenav-btn.active svg { color: #fbbf24; }
+    .desktop-nav-spacer { flex: 1; min-height: 8px; }
+    .desktop-only-option { display: flex; }
     .sidebar { width: 260px; }
     .items-list { padding: 10px 20px 20px; }
+    #page-inicio.active { display: flex; overflow-y: auto; }
+    #dashboardMobileContent { display: none; }
+    #dashboardDesktop { display: grid; width: 100%; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.95fr); grid-template-areas: "metrics metrics" "movement category" "shelves expiry"; gap: 14px; align-content: start; padding: 20px 24px 24px; }
+    .desktop-metrics { grid-area: metrics; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .desktop-metric-card, .desktop-widget { min-width: 0; background: #171614; border: 1px solid #242220; border-radius: 14px; box-shadow: 0 5px 18px rgba(0,0,0,0.12); }
+    .desktop-metric-card { min-height: 82px; padding: 14px 16px; }
+    .desktop-metric-label { color: #a8a29e; font-size: 11px; font-weight: 500; }
+    .desktop-metric-value { margin-top: 3px; color: #f5f5f4; font-size: 23px; font-weight: 800; line-height: 1.15; }
+    .desktop-metric-card.alert .desktop-metric-value { color: #f59e0b; }
+    .desktop-widget { padding: 15px 16px; }
+    .desktop-widget-title { margin-bottom: 12px; color: #e7e5e4; font-size: 12px; font-weight: 800; }
+    .desktop-widget-movement { grid-area: movement; min-height: 228px; }
+    .desktop-widget-category { grid-area: category; min-height: 228px; }
+    .desktop-widget-shelves { grid-area: shelves; min-height: 124px; }
+    .desktop-widget-expiry { grid-area: expiry; min-height: 124px; }
+    .desktop-category-layout { display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 170px; }
+    .desktop-donut { width: 132px; height: 132px; border-radius: 50%; flex: 0 0 132px; position: relative; }
+    .desktop-donut::after { content: ""; position: absolute; inset: 25px; border-radius: 50%; background: var(--desktop-donut-hole, #171614); }
+    .desktop-donut-legend { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; max-height: 165px; overflow: auto; }
+    .desktop-donut-legend .dash-legend-row { font-size: 10px; }
+    .desktop-donut-legend .dash-legend-label { white-space: normal; line-height: 1.2; }
+    .desktop-shelf-bars { display: flex; flex-direction: column; gap: 10px; }
+    .desktop-shelf-row { display: grid; grid-template-columns: 90px minmax(40px, 1fr) 24px; align-items: center; gap: 9px; font-size: 11px; }
+    .desktop-shelf-name { display: flex; align-items: center; gap: 7px; min-width: 0; color: #d6d3d1; }
+    .desktop-shelf-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; }
+    .desktop-shelf-track { height: 7px; border-radius: 99px; background: #292524; overflow: hidden; }
+    .desktop-shelf-fill { height: 100%; border-radius: inherit; }
+    .desktop-shelf-count { color: #a8a29e; text-align: right; }
+    .desktop-expiry-list { display: flex; flex-direction: column; gap: 7px; }
+    .desktop-expiry-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: 10.5px; }
+    .desktop-expiry-description { overflow: hidden; color: #d6d3d1; text-overflow: ellipsis; white-space: nowrap; }
+    .desktop-expiry-meta { color: #facc15; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .desktop-widget-link { display: block; margin: 10px 0 0 auto; padding: 0; border: 0; background: transparent; color: #a8a29e; font: inherit; font-size: 10px; cursor: pointer; }
+    .desktop-widget-link:hover { color: #f5f5f4; }
+    .desktop-empty { color: #78716c; font-size: 11px; padding: 8px 0; }
+    .desktop-chart-legend { display: flex; gap: 14px; align-items: center; color: #a8a29e; font-size: 10px; margin: 0 0 3px 45px; }
+    .desktop-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .desktop-chart-key { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .desktop-chart-svg { display: block; width: 100%; height: auto; overflow: visible; }
+  }
 
-    /* A logo já aparece no menu lateral — no cabeçalho, só as
-       estatísticas, pra não duplicar. */
-    .brand-top { display: none; }
-    header { padding: 16px 20px; }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .desktop-sidenav { width: 178px; flex-basis: 178px; padding: 18px 10px; }
+    .desktop-sidenav-btn { gap: 8px; padding-left: 8px; font-size: 11px; }
+    .desktop-brand-version { display: none; }
+    .app-main-col > header { padding: 10px 16px; }
+    #dashboardDesktop { grid-template-columns: minmax(0, 1.2fr) minmax(235px, 0.92fr); gap: 11px; padding: 16px; }
+    .desktop-metrics { gap: 8px; }
+    .desktop-metric-card { padding: 12px 10px; min-height: 74px; }
+    .desktop-metric-label { font-size: 10px; }
+    .desktop-metric-value { font-size: 20px; }
+    .desktop-widget { padding: 12px; }
+    .desktop-category-layout { gap: 10px; }
+    .desktop-donut { width: 104px; height: 104px; flex-basis: 104px; }
+    .desktop-donut::after { inset: 21px; }
+    .desktop-shelf-row { grid-template-columns: 74px minmax(30px, 1fr) 20px; gap: 6px; font-size: 10px; }
+  }
+
+  @media (min-width: 1024px) {
+    .desktop-sidenav { width: 212px; flex-basis: 212px; padding: 24px 14px; }
+    #dashboardDesktop { gap: 16px; padding: 24px 28px 28px; }
+    .desktop-widget-movement, .desktop-widget-category { min-height: 260px; }
+    .desktop-widget-shelves, .desktop-widget-expiry { min-height: 138px; }
   }
 </style>
 </head>
@@ -356,24 +432,32 @@
 
 <div class="app-shell">
 <nav class="desktop-sidenav">
-  <div class="desktop-sidenav-brand"><img class="desktop-sidenav-logo" src="assets/logo.png" alt="Denis - Controle de Estoque"></div>
+  <div class="desktop-sidenav-brand">
+    <span class="desktop-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg></span>
+    <span>Denis</span><span class="desktop-brand-version" id="desktopVersion"></span>
+  </div>
   <button class="desktop-sidenav-btn active" data-tab="inicio">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
-    <span>Início</span>
-  </button>
-  <button class="desktop-sidenav-btn" data-tab="movimentacao">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>
-    <span>Movimentação</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Painel</span>
   </button>
   <button class="desktop-sidenav-btn" data-tab="estoque">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-    <span>Estoque</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></svg>
+    <span>Prateleiras</span>
   </button>
-  <button class="desktop-sidenav-btn" data-tab="divergencias">
-    <span style="font-size:17px;line-height:1;">⚠</span><span>Divergências</span>
+  <button class="desktop-sidenav-btn" data-tab="movimentacao">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+    <span>Movimentação</span>
+  </button>
+  <button class="desktop-sidenav-btn" data-desktop-action="vencimentos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    <span>Vencimentos</span>
+  </button>
+  <button class="desktop-sidenav-btn" data-desktop-action="relatorios">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v6h5M10 13h6M10 17h6"/></svg>
+    <span>Relatórios</span>
   </button>
   <button class="desktop-sidenav-btn" data-tab="opcoes">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>Opções</span>
   </button>
 </nav>
@@ -389,9 +473,19 @@
       <div>TOTAL PRATELEIRAS: <span class="mono" id="headerTotalShelves">0</span></div>
     </div>
   </div>
+  <div class="desktop-header-content">
+    <label class="desktop-search" aria-label="Buscar item ou código">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="desktopSearchInput" type="search" placeholder="Buscar item ou código" autocomplete="off">
+    </label>
+    <button class="desktop-notification" id="desktopNotifications" title="Ver notificações e vencimentos" aria-label="Ver notificações e vencimentos">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+    </button>
+  </div>
 </header>
 
 <div class="app-page active" id="page-inicio">
+  <div id="dashboardMobileContent">
   <div class="page-header"><div class="page-title">Painel de Visão Geral</div></div>
   <div class="dash-stats-row">
     <div class="dash-stat-card">
@@ -418,6 +512,32 @@
     <div class="dash-section-title">Últimas Atividades</div>
     <div id="dashRecentActivity"></div>
     <button class="btn btn-ghost" id="dashSeeAllHistory" style="margin-top:10px;width:100%;">Ver histórico completo</button>
+  </div>
+  </div>
+  <div class="desktop-dashboard" id="dashboardDesktop">
+    <div class="desktop-metrics">
+      <div class="desktop-metric-card"><div class="desktop-metric-label">Prateleiras</div><div class="desktop-metric-value" id="desktopMetricShelves">0</div></div>
+      <div class="desktop-metric-card"><div class="desktop-metric-label">Itens</div><div class="desktop-metric-value" id="desktopMetricItems">0</div></div>
+      <div class="desktop-metric-card alert"><div class="desktop-metric-label">Estoque baixo</div><div class="desktop-metric-value" id="desktopMetricLowStock">0</div></div>
+      <div class="desktop-metric-card alert"><div class="desktop-metric-label">A vencer</div><div class="desktop-metric-value" id="desktopMetricExpiring">0</div></div>
+    </div>
+    <section class="desktop-widget desktop-widget-movement">
+      <div class="desktop-widget-title">Movimentação mensal</div>
+      <div id="desktopMovementChart"></div>
+    </section>
+    <section class="desktop-widget desktop-widget-category">
+      <div class="desktop-widget-title">Unidades por categoria</div>
+      <div class="desktop-category-layout"><div class="desktop-donut" id="desktopDonut"></div><div class="desktop-donut-legend" id="desktopDonutLegend"></div></div>
+    </section>
+    <section class="desktop-widget desktop-widget-shelves">
+      <div class="desktop-widget-title">Prateleiras por cor</div>
+      <div class="desktop-shelf-bars" id="desktopShelfColors"></div>
+    </section>
+    <section class="desktop-widget desktop-widget-expiry">
+      <div class="desktop-widget-title">Itens a vencer</div>
+      <div class="desktop-expiry-list" id="desktopExpiringItems"></div>
+      <button type="button" class="desktop-widget-link" id="desktopExpirySeeAll">Ver todos</button>
+    </section>
   </div>
 </div>
 
@@ -453,6 +573,10 @@
 <div class="app-page" id="page-opcoes">
   <div class="page-header"><div class="page-title">Opções</div></div>
   <div class="options-list">
+    <button class="options-item desktop-only-option" id="optDesktopDivergencias">
+      <span class="options-item-icon" style="color:#a78bfa;">⚠</span>
+      <span class="options-item-label">Divergências de código</span>
+    </button>
     <button class="options-item" id="optCreateShelf">
       <span class="options-item-icon">+</span>
       <span class="options-item-label">Criar prateleira</span>
@@ -559,7 +683,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.3";
+  var APP_VERSION = "Alpha v3.4";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -988,6 +1112,148 @@
     document.getElementById("headerTotalShelves").textContent = state.shelves.length;
   }
 
+  function renderCategoryDonut(donutId, legendId, entries, totalUnits, holeColor) {
+    var donut = document.getElementById(donutId);
+    var legend = document.getElementById(legendId);
+    if (!donut || !legend) return;
+    if (!entries.length || totalUnits <= 0) {
+      donut.style.background = "#1c1917";
+      var emptyClass = holeColor === "#0c0a09" ? "modal-text" : "desktop-empty";
+      legend.innerHTML = '<div class="' + emptyClass + '">Nenhuma unidade cadastrada ainda.</div>';
+      return;
+    }
+    var accumulated = 0;
+    var segments = entries.map(function (entry) {
+      var start = (accumulated / totalUnits) * 100;
+      accumulated += entry.value;
+      var end = (accumulated / totalUnits) * 100;
+      var color = CATEGORY_COLOR_MAP[entry.label] || "#64748b";
+      return color + " " + start.toFixed(2) + "% " + end.toFixed(2) + "%";
+    });
+    donut.style.background = "conic-gradient(" + segments.join(", ") + ")";
+    if (holeColor) donut.style.setProperty("--desktop-donut-hole", holeColor);
+    legend.innerHTML = entries.map(function (entry) {
+      var color = CATEGORY_COLOR_MAP[entry.label] || "#64748b";
+      var pct = Math.round((entry.value / totalUnits) * 100);
+      return '<div class="dash-legend-row">' +
+        '<span class="dash-legend-dot" style="background:' + color + ';"></span>' +
+        '<span class="dash-legend-label">' + escapeHtml(entry.label) + '</span>' +
+        '<span class="dash-legend-value mono">' + entry.value + ' (' + pct + '%)</span>' +
+      '</div>';
+    }).join("");
+  }
+
+  function getMonthlyMovementSeries() {
+    var buckets = [
+      { incoming: 0, outgoing: 0 }, { incoming: 0, outgoing: 0 },
+      { incoming: 0, outgoing: 0 }, { incoming: 0, outgoing: 0 }
+    ];
+    var now = new Date();
+    state.history.forEach(function (entry) {
+      var date = new Date(entry.timestamp);
+      if (date.getFullYear() !== now.getFullYear() || date.getMonth() !== now.getMonth()) return;
+      var index = Math.min(3, Math.floor((date.getDate() - 1) / 7));
+      var quantity = Math.max(0, Number(entry.quantity) || 0);
+      if (entry.type === "added" || entry.type === "qty_increase") buckets[index].incoming += quantity;
+      else if (entry.type === "removed" || entry.type === "qty_decrease") buckets[index].outgoing += quantity;
+    });
+    return buckets;
+  }
+
+  function renderMonthlyMovementChart() {
+    var root = document.getElementById("desktopMovementChart");
+    if (!root) return;
+    var series = getMonthlyMovementSeries();
+    var maxValue = 0;
+    series.forEach(function (week) { maxValue = Math.max(maxValue, week.incoming, week.outgoing); });
+    var scaleMax = maxValue > 0 ? Math.ceil(maxValue / 4) * 4 : 4;
+    var x = [55, 194, 333, 472];
+    var top = 20, bottom = 150, chartHeight = bottom - top;
+    function y(value) { return bottom - (value / scaleMax) * chartHeight; }
+    function linePath(key) {
+      var coords = series.map(function (week, index) { return { x: x[index], y: y(week[key]) }; });
+      var path = "M " + coords[0].x + " " + coords[0].y.toFixed(1);
+      for (var index = 1; index < coords.length; index++) {
+        var previous = coords[index - 1], current = coords[index];
+        var middleX = (previous.x + current.x) / 2;
+        path += " C " + middleX.toFixed(1) + " " + previous.y.toFixed(1) + " " + middleX.toFixed(1) + " " + current.y.toFixed(1) + " " + current.x + " " + current.y.toFixed(1);
+      }
+      return path;
+    }
+    var incomingPath = linePath("incoming");
+    var outgoingPath = linePath("outgoing");
+    var incomingArea = incomingPath + " L " + x[3] + " " + bottom + " L " + x[0] + " " + bottom + " Z";
+    var grid = "";
+    for (var i = 0; i <= 4; i++) {
+      var value = Math.round(scaleMax * (4 - i) / 4);
+      var lineY = top + chartHeight * i / 4;
+      grid += '<line x1="45" y1="' + lineY.toFixed(1) + '" x2="488" y2="' + lineY.toFixed(1) + '" stroke="#302d29" stroke-width="1"/>' +
+        '<text x="37" y="' + (lineY + 3).toFixed(1) + '" text-anchor="end" fill="#78716c" font-size="9">' + value + '</text>';
+    }
+    root.innerHTML =
+      '<div class="desktop-chart-legend"><span><i class="desktop-chart-key" style="background:#f59e0b"></i>Entradas</span><span><i class="desktop-chart-key" style="background:#a8a29e"></i>Saídas</span></div>' +
+      '<svg class="desktop-chart-svg" viewBox="0 0 510 178" role="img" aria-label="Entradas e saídas de unidades nas semanas do mês">' +
+        grid +
+        '<path d="' + incomingArea + '" fill="rgba(245,158,11,0.10)" stroke="none"/>' +
+        '<path d="' + incomingPath + '" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="' + outgoingPath + '" fill="none" stroke="#a8a29e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+        x.map(function (position, index) { return '<text x="' + position + '" y="170" text-anchor="middle" fill="#78716c" font-size="10">S' + (index + 1) + '</text>'; }).join("") +
+      '</svg>';
+  }
+
+  function renderDesktopShelfColors() {
+    var root = document.getElementById("desktopShelfColors");
+    if (!root) return;
+    var totals = {};
+    state.shelves.forEach(function (shelf) { totals[shelf.color] = (totals[shelf.color] || 0) + 1; });
+    var entries = Object.keys(totals).map(function (color) {
+      var colorInfo = SHELF_COLORS.find(function (item) { return item.value === color; });
+      return { color: color, name: colorInfo ? colorInfo.name : "Outra cor", count: totals[color] };
+    }).sort(function (a, b) { return b.count - a.count; });
+    if (!entries.length) {
+      root.innerHTML = '<div class="desktop-empty">Nenhuma prateleira cadastrada.</div>';
+      return;
+    }
+    var maxCount = entries[0].count || 1;
+    root.innerHTML = entries.slice(0, 4).map(function (entry) {
+      var width = Math.max(5, Math.round((entry.count / maxCount) * 100));
+      return '<div class="desktop-shelf-row"><span class="desktop-shelf-name"><i class="desktop-shelf-dot" style="background:' + entry.color + '"></i>' + escapeHtml(entry.name) + '</span>' +
+        '<span class="desktop-shelf-track"><i class="desktop-shelf-fill" style="display:block;width:' + width + '%;background:' + entry.color + '"></i></span>' +
+        '<span class="desktop-shelf-count mono">' + entry.count + '</span></div>';
+    }).join("");
+  }
+
+  function renderDesktopExpiringItems(entries) {
+    var root = document.getElementById("desktopExpiringItems");
+    if (!root) return;
+    if (!entries.length) {
+      root.innerHTML = '<div class="desktop-empty">Nenhum item a vencer nos próximos 30 dias.</div>';
+      return;
+    }
+    root.innerHTML = entries.slice(0, 3).map(function (entry) {
+      return '<div class="desktop-expiry-row"><span class="desktop-expiry-description" title="' + escapeHtml(entry.description) + '">' + escapeHtml(entry.description) + '</span>' +
+        '<span class="desktop-expiry-meta">' + entry.quantity + ' un. · ' + escapeHtml(entry.validade) + '</span></div>';
+    }).join("");
+  }
+
+  function renderDesktopDashboard(expirySummary, categoryEntries, totalUnits) {
+    var totalItems = 0, lowStockItems = 0;
+    state.shelves.forEach(function (shelf) {
+      totalItems += shelf.items.length;
+      shelf.items.forEach(function (item) {
+        if ((Number(item.quantity) || 0) <= LOW_STOCK_THRESHOLD) lowStockItems++;
+      });
+    });
+    document.getElementById("desktopMetricShelves").textContent = state.shelves.length;
+    document.getElementById("desktopMetricItems").textContent = totalItems;
+    document.getElementById("desktopMetricLowStock").textContent = lowStockItems;
+    document.getElementById("desktopMetricExpiring").textContent = expirySummary.vencendo.length;
+    renderMonthlyMovementChart();
+    renderCategoryDonut("desktopDonut", "desktopDonutLegend", categoryEntries, totalUnits, "#171614");
+    renderDesktopShelfColors();
+    renderDesktopExpiringItems(expirySummary.vencendo);
+  }
+
   // Preenche a aba Início: alertas de validade, gráfico, backup e atividades.
   function renderInicioPage() {
     var expirySummary = computeExpirySummary();
@@ -1000,31 +1266,8 @@
     var catEntries = getCategoryUnitTotals(state.shelves);
     var totalUnits = catEntries.reduce(function (acc, e) { return acc + e.value; }, 0);
 
-    var donutEl = document.getElementById("dashDonut");
-    var legendEl = document.getElementById("dashDonutLegend");
-    if (catEntries.length === 0) {
-      donutEl.style.background = "#1c1917";
-      legendEl.innerHTML = '<div class="modal-text">Nenhuma unidade cadastrada ainda.</div>';
-    } else {
-      var acc = 0;
-      var gradientParts = catEntries.map(function (e) {
-        var startPct = (acc / totalUnits) * 100;
-        acc += e.value;
-        var endPct = (acc / totalUnits) * 100;
-        var color = CATEGORY_COLOR_MAP[e.label] || "#64748b";
-        return color + " " + startPct.toFixed(2) + "% " + endPct.toFixed(2) + "%";
-      });
-      donutEl.style.background = "conic-gradient(" + gradientParts.join(", ") + ")";
-      legendEl.innerHTML = catEntries.map(function (e) {
-        var color = CATEGORY_COLOR_MAP[e.label] || "#64748b";
-        var pct = totalUnits > 0 ? Math.round((e.value / totalUnits) * 100) : 0;
-        return '<div class="dash-legend-row">' +
-          '<span class="dash-legend-dot" style="background:' + color + ';"></span>' +
-          '<span class="dash-legend-label">' + escapeHtml(e.label) + '</span>' +
-          '<span class="dash-legend-value mono">' + e.value + ' (' + pct + '%)</span>' +
-        '</div>';
-      }).join("");
-    }
+    renderCategoryDonut("dashDonut", "dashDonutLegend", catEntries, totalUnits, "#0c0a09");
+    renderDesktopDashboard(expirySummary, catEntries, totalUnits);
 
     var info = getBackupReminderInfo();
     var line = document.getElementById("dashBackupLine");
@@ -2469,7 +2712,7 @@
     reader.readAsText(file);
   });
 
-  // Troca entre as 4 abas (Início / Movimentação / Estoque / Opções).
+  // Troca entre as abas principais.
   function setActiveTab(tab) {
     state.activeTab = tab;
     document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
@@ -2482,8 +2725,33 @@
     if (tab === "divergencias") renderItemsList("divergenciasList", true);
   }
 
-  document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn").forEach(function (btn) {
+  document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn[data-tab]").forEach(function (btn) {
     btn.addEventListener("click", function () { setActiveTab(btn.getAttribute("data-tab")); });
+  });
+
+  document.querySelectorAll(".desktop-sidenav-btn[data-desktop-action]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var action = btn.getAttribute("data-desktop-action");
+      if (action === "vencimentos") openPendenciasModal();
+      if (action === "relatorios") {
+        if (state.shelves.length) openPdfModal(state.shelves.slice());
+        else showToast("Crie uma prateleira antes de gerar um relatório");
+      }
+    });
+  });
+
+  document.getElementById("desktopNotifications").addEventListener("click", openPendenciasModal);
+  document.getElementById("desktopExpirySeeAll").addEventListener("click", function () {
+    openExpiryListModal("Itens a vencer", computeExpirySummary().vencendo);
+  });
+  document.getElementById("desktopSearchInput").addEventListener("keydown", function (event) {
+    if (event.key !== "Enter") return;
+    state.search = event.currentTarget.value.trim();
+    state.searchScope = "all";
+    if (!state.selectedShelfId && state.shelves.length) state.selectedShelfId = state.shelves[0].id;
+    setActiveTab("estoque");
+    renderToolbar();
+    renderItemsList();
   });
 
   document.getElementById("dashSeeAllHistory").addEventListener("click", function () {
@@ -2492,6 +2760,10 @@
 
   document.getElementById("optCreateShelf").addEventListener("click", function () {
     openShelfFormModal(null);
+  });
+
+  document.getElementById("optDesktopDivergencias").addEventListener("click", function () {
+    setActiveTab("divergencias");
   });
 
   document.getElementById("optPendencias").addEventListener("click", openPendenciasModal);
@@ -2507,6 +2779,7 @@
   });
   document.getElementById("headerVersion").textContent = APP_VERSION;
   document.getElementById("appSplashVersion").textContent = APP_VERSION;
+  document.getElementById("desktopVersion").textContent = APP_VERSION;
   loadData();
   render();
 

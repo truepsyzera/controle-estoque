@@ -2,7 +2,7 @@
 // Guarda os arquivos do app em cache para que ele funcione 100% offline
 // depois da primeira vez que for aberto/instalado.
 
-var CACHE_NAME = "controle-estoque-cache-v36";
+var CACHE_NAME = "controle-estoque-cache-v37";
 var FILES_TO_CACHE = [
   "./",
   "./index.html",
