@@ -328,7 +328,6 @@
 
   .desktop-header-content { display: none; }
   .desktop-dashboard { display: none; }
-  .desktop-only-option { display: none; }
 
   @media (min-width: 768px) {
     .app-shell { flex-direction: row; height: 100vh; height: 100dvh; }
@@ -353,7 +352,6 @@
     .desktop-sidenav-btn.active { background: rgba(245, 158, 11, 0.16); color: #f5f5f4; }
     .desktop-sidenav-btn.active svg { color: #fbbf24; }
     .desktop-nav-spacer { flex: 1; min-height: 8px; }
-    .desktop-only-option { display: flex; }
     .sidebar { width: 260px; }
     .items-list { padding: 10px 20px 20px; }
     #page-inicio.active { display: flex; overflow-y: auto; }
@@ -566,14 +564,17 @@
 </div>
 
 <div class="app-page" id="page-divergencias">
-  <div class="page-header"><div class="page-title">Divergências</div><div class="page-subtitle">Itens com código duplicado</div></div>
+  <div class="page-header" style="display:flex;align-items:center;gap:10px;">
+    <button class="btn btn-ghost btn-icon" id="divergenciasBack" title="Voltar para Opções">←</button>
+    <div><div class="page-title">Divergências</div><div class="page-subtitle">Itens com código duplicado</div></div>
+  </div>
   <div class="items-list" id="divergenciasList"></div>
 </div>
 
 <div class="app-page" id="page-opcoes">
   <div class="page-header"><div class="page-title">Opções</div></div>
   <div class="options-list">
-    <button class="options-item desktop-only-option" id="optDesktopDivergencias">
+    <button class="options-item" id="optDivergencias">
       <span class="options-item-icon" style="color:#a78bfa;">⚠</span>
       <span class="options-item-label">Divergências de código</span>
     </button>
@@ -598,7 +599,7 @@
       <span class="options-item-icon">📤</span>
       <span class="options-item-label">Compartilhar backup</span>
     </button>
-    <input type="file" id="fileInput" accept="application/json" class="hidden-file-input">
+    <input type="file" id="fileInput" accept=".json,.txt,application/json,text/plain" class="hidden-file-input">
   </div>
 </div>
 
@@ -622,10 +623,6 @@
   <button class="bottom-nav-btn" data-tab="estoque">
     <span class="bn-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
     <span>Estoque</span>
-  </button>
-  <button class="bottom-nav-btn" data-tab="divergencias">
-    <span class="bn-icon" style="font-size:19px;line-height:19px;">⚠</span>
-    <span>Divergências</span>
   </button>
   <button class="bottom-nav-btn" data-tab="opcoes">
     <span class="bn-icon"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
@@ -683,10 +680,17 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.4";
+  var APP_VERSION = "Alpha v3.5";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
+  var QUANTITY_FORMATTER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+
+  function formatQuantity(value) {
+    var number = Number(value);
+    if (!isFinite(number)) return "0";
+    return QUANTITY_FORMATTER.format(number);
+  }
 
   // Lista oficial do gráfico. Frascos e potes exigem tipo + medida; as
   // demais categorias exigem o nome composto ou um dos nomes alternativos.
@@ -817,6 +821,7 @@
     historyArchive: [],
     activeTab: "inicio",
     itemFormMode: "add",
+    itemFormReturnTab: "estoque",
     itemFormShelfId: null,
     itemFormItemId: null,
     pdfMeta: { revisao: "000", vigencia: "", formato: "linha_coluna" },
@@ -929,7 +934,7 @@
       var d = new Date(h.timestamp);
       var dateStr = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " +
         String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-      var qty = h.quantity || 0;
+      var qty = formatQuantity(h.quantity || 0);
       var iconClass, iconChar, metaText, shelfLabel;
 
       if (h.type === "added") {
@@ -1108,8 +1113,8 @@
   function renderHeaderStats() {
     var totalItems = 0;
     state.shelves.forEach(function (shelf) { totalItems += shelf.items.length; });
-    document.getElementById("headerTotalItems").textContent = totalItems;
-    document.getElementById("headerTotalShelves").textContent = state.shelves.length;
+    document.getElementById("headerTotalItems").textContent = formatQuantity(totalItems);
+    document.getElementById("headerTotalShelves").textContent = formatQuantity(state.shelves.length);
   }
 
   function renderCategoryDonut(donutId, legendId, entries, totalUnits, holeColor) {
@@ -1138,7 +1143,7 @@
       return '<div class="dash-legend-row">' +
         '<span class="dash-legend-dot" style="background:' + color + ';"></span>' +
         '<span class="dash-legend-label">' + escapeHtml(entry.label) + '</span>' +
-        '<span class="dash-legend-value mono">' + entry.value + ' (' + pct + '%)</span>' +
+        '<span class="dash-legend-value mono">' + formatQuantity(entry.value) + ' (' + pct + '%)</span>' +
       '</div>';
     }).join("");
   }
@@ -1188,7 +1193,7 @@
       var value = Math.round(scaleMax * (4 - i) / 4);
       var lineY = top + chartHeight * i / 4;
       grid += '<line x1="45" y1="' + lineY.toFixed(1) + '" x2="488" y2="' + lineY.toFixed(1) + '" stroke="#302d29" stroke-width="1"/>' +
-        '<text x="37" y="' + (lineY + 3).toFixed(1) + '" text-anchor="end" fill="#78716c" font-size="9">' + value + '</text>';
+        '<text x="37" y="' + (lineY + 3).toFixed(1) + '" text-anchor="end" fill="#78716c" font-size="9">' + formatQuantity(value) + '</text>';
     }
     root.innerHTML =
       '<div class="desktop-chart-legend"><span><i class="desktop-chart-key" style="background:#f59e0b"></i>Entradas</span><span><i class="desktop-chart-key" style="background:#a8a29e"></i>Saídas</span></div>' +
@@ -1219,7 +1224,7 @@
       var width = Math.max(5, Math.round((entry.count / maxCount) * 100));
       return '<div class="desktop-shelf-row"><span class="desktop-shelf-name"><i class="desktop-shelf-dot" style="background:' + entry.color + '"></i>' + escapeHtml(entry.name) + '</span>' +
         '<span class="desktop-shelf-track"><i class="desktop-shelf-fill" style="display:block;width:' + width + '%;background:' + entry.color + '"></i></span>' +
-        '<span class="desktop-shelf-count mono">' + entry.count + '</span></div>';
+        '<span class="desktop-shelf-count mono">' + formatQuantity(entry.count) + '</span></div>';
     }).join("");
   }
 
@@ -1232,7 +1237,7 @@
     }
     root.innerHTML = entries.slice(0, 3).map(function (entry) {
       return '<div class="desktop-expiry-row"><span class="desktop-expiry-description" title="' + escapeHtml(entry.description) + '">' + escapeHtml(entry.description) + '</span>' +
-        '<span class="desktop-expiry-meta">' + entry.quantity + ' un. · ' + escapeHtml(entry.validade) + '</span></div>';
+        '<span class="desktop-expiry-meta">' + formatQuantity(entry.quantity) + ' un. · ' + escapeHtml(entry.validade) + '</span></div>';
     }).join("");
   }
 
@@ -1244,10 +1249,10 @@
         if ((Number(item.quantity) || 0) <= LOW_STOCK_THRESHOLD) lowStockItems++;
       });
     });
-    document.getElementById("desktopMetricShelves").textContent = state.shelves.length;
-    document.getElementById("desktopMetricItems").textContent = totalItems;
-    document.getElementById("desktopMetricLowStock").textContent = lowStockItems;
-    document.getElementById("desktopMetricExpiring").textContent = expirySummary.vencendo.length;
+    document.getElementById("desktopMetricShelves").textContent = formatQuantity(state.shelves.length);
+    document.getElementById("desktopMetricItems").textContent = formatQuantity(totalItems);
+    document.getElementById("desktopMetricLowStock").textContent = formatQuantity(lowStockItems);
+    document.getElementById("desktopMetricExpiring").textContent = formatQuantity(expirySummary.vencendo.length);
     renderMonthlyMovementChart();
     renderCategoryDonut("desktopDonut", "desktopDonutLegend", categoryEntries, totalUnits, "#171614");
     renderDesktopShelfColors();
@@ -1257,9 +1262,9 @@
   // Preenche a aba Início: alertas de validade, gráfico, backup e atividades.
   function renderInicioPage() {
     var expirySummary = computeExpirySummary();
-    document.getElementById("dashExpiringItems").textContent = expirySummary.vencendo.length;
-    document.getElementById("dashExpiredItems").textContent = expirySummary.vencidos.length;
-    document.getElementById("optPendenciasCount").textContent = expirySummary.vencendo.length + expirySummary.vencidos.length + expirySummary.estoqueZerado.length + expirySummary.validadePendente.length;
+    document.getElementById("dashExpiringItems").textContent = formatQuantity(expirySummary.vencendo.length);
+    document.getElementById("dashExpiredItems").textContent = formatQuantity(expirySummary.vencidos.length);
+    document.getElementById("optPendenciasCount").textContent = formatQuantity(expirySummary.vencendo.length + expirySummary.vencidos.length + expirySummary.estoqueZerado.length + expirySummary.validadePendente.length);
 
     // O gráfico soma as unidades em estoque por categoria oficial, sem
     // criar fatias genéricas de tamanho ou tipo.
@@ -1316,7 +1321,7 @@
   function openExpiryListModal(title, entries) {
     var root = document.getElementById("modalRoot");
     var rows = entries.map(function (e) {
-      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + e.quantity + ' · Validade: ' + escapeHtml(e.validade || "Não informada") + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
+      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + formatQuantity(e.quantity) + ' · Validade: ' + escapeHtml(e.validade || "Não informada") + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
     }).join("");
 
     root.innerHTML =
@@ -1351,7 +1356,7 @@
     root.innerHTML = '<div class="modal-overlay" id="modalOverlay"><div class="modal-box pending-modal-box">' +
       '<div class="modal-title">Pendências</div><div class="modal-text">Itens separados por situação. Toque em uma categoria para ver a lista.</div>' +
       '<div class="pending-category-list">' + categories.map(function (category) {
-        return '<button class="pending-category-btn" data-pending-category="' + category.id + '"><span class="pending-category-icon">' + category.icon + '</span><span class="pending-category-name">' + category.title + '</span><span class="pending-category-count mono">' + category.items.length + '</span></button>';
+        return '<button class="pending-category-btn" data-pending-category="' + category.id + '"><span class="pending-category-icon">' + category.icon + '</span><span class="pending-category-name">' + category.title + '</span><span class="pending-category-count mono">' + formatQuantity(category.items.length) + '</span></button>';
       }).join("") + '</div><div class="modal-actions" style="margin-top:12px;"><button class="btn btn-ghost" id="pendingModalClose">Fechar</button></div></div></div>';
     function close() { root.innerHTML = ""; }
     document.getElementById("pendingModalClose").addEventListener("click", close);
@@ -1372,7 +1377,7 @@
     var rows = entries.map(function (e) {
       var validity = e.validade || "Não informada";
       if (e.validade && !parseBRDate(e.validade)) validity = "Inválida: " + e.validade;
-      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + e.quantity + ' · Validade: ' + escapeHtml(validity) + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
+      return '<div class="pending-item-row"><div class="pending-item-main"><span class="pending-item-code mono">' + escapeHtml(e.code) + '</span><span class="pending-item-desc">' + escapeHtml(e.description) + '</span></div><div class="pending-item-meta">Quantidade: ' + formatQuantity(e.quantity) + ' · Validade: ' + escapeHtml(validity) + ' · ' + escapeHtml(e.shelfName) + '</div></div>';
     }).join("");
     root.innerHTML = '<div class="modal-overlay" id="modalOverlay"><div class="modal-box pending-modal-box">' +
       '<div class="modal-title">' + escapeHtml(title) + '</div><div class="pending-list">' + (rows || '<div class="modal-text">Nenhum item nesta categoria.</div>') + '</div>' +
@@ -1386,7 +1391,7 @@
   function printExpiryList(title, entries) {
     var printArea = document.getElementById("printArea");
     var rows = entries.map(function (item) {
-      return '<tr><td>' + escapeHtml(item.code) + '</td><td>' + escapeHtml(item.description) + '</td><td>' + item.quantity + '</td><td>' + escapeHtml(item.validade || "Não informada") + '</td></tr>';
+      return '<tr><td>' + escapeHtml(item.code) + '</td><td>' + escapeHtml(item.description) + '</td><td>' + formatQuantity(item.quantity) + '</td><td>' + escapeHtml(item.validade || "Não informada") + '</td></tr>';
     }).join("");
     printArea.innerHTML = '<h1 class="expiry-print-title">' + escapeHtml(title) + '</h1><div class="expiry-print-date">Gerado em ' + todayBR() + ' · ' + entries.length + (entries.length === 1 ? ' item' : ' itens') + '</div>' +
       '<table class="expiry-print-table"><thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th><th>Validade</th></tr></thead><tbody>' + rows + '</tbody></table>';
@@ -1419,7 +1424,7 @@
           '<span class="color-group-chevron">' + (collapsed ? "▸" : "▾") + '</span>' +
           '<span class="shelf-dot" style="background:' + color + '"></span>' +
           (compact ? '' : '<span class="color-group-name">' + escapeHtml(colorLabel) + '</span>') +
-          (compact ? '' : '<span class="color-group-count mono">' + shelvesInGroup.length + '</span>') +
+          (compact ? '' : '<span class="color-group-count mono">' + formatQuantity(shelvesInGroup.length) + '</span>') +
         '</div>';
 
       if (!collapsed) {
@@ -1438,7 +1443,7 @@
             ) +
             '<button class="shelf-btn' + activeClass + '" data-select-shelf="' + shelf.id + '" style="flex:1;" title="' + escapeHtml(shelf.name) + '">' +
               '<span class="shelf-name">' + escapeHtml(shelf.name) + '</span>' +
-              (compact ? '' : '<span class="shelf-count mono">' + shelf.items.length + '</span>') +
+              (compact ? '' : '<span class="shelf-count mono">' + formatQuantity(shelf.items.length) + '</span>') +
             '</button>' +
             (compact ? '' :
               '<label class="shelf-check-wrap" title="Selecionar para imprimir junto">' +
@@ -1900,7 +1905,7 @@
           '<div class="item-code-wrap"><div class="item-code mono" data-hscroll>' + escapeHtml(item.code) + '</div></div>' +
           '<div class="item-desc-wrap"><div class="item-desc' + (getExpiryClass(item.validade) ? ' ' + getExpiryClass(item.validade) : '') + '" data-hscroll' + (item.validade ? ' title="Validade: ' + escapeHtml(item.validade) + '"' : '') + '>' + escapeHtml(item.description) + '</div></div>' +
           '<div class="qty-controls">' +
-            '<div class="qty-val-wrap"><div class="qty-val mono' + (item.quantity <= LOW_STOCK_THRESHOLD ? ' qty-low' : '') + '" data-hscroll title="' + (item.quantity <= LOW_STOCK_THRESHOLD ? "Estoque baixo" : "") + '">' + item.quantity + '</div></div>' +
+            '<div class="qty-val-wrap"><div class="qty-val mono' + (item.quantity <= LOW_STOCK_THRESHOLD ? ' qty-low' : '') + '" data-hscroll title="' + (item.quantity <= LOW_STOCK_THRESHOLD ? "Estoque baixo" : "") + '">' + formatQuantity(item.quantity) + '</div></div>' +
           '</div>' +
           (otherShelves.length ? '<button class="btn btn-ghost btn-icon" data-open-move="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '" title="Mover para outra prateleira">↦</button>' : '') +
           '<button class="btn btn-ghost btn-icon" data-edit-item="' + item.id + '" data-owner-shelf="' + ownerShelf.id + '">✎</button>' +
@@ -2211,7 +2216,7 @@
               "<td>" + escapeHtml(item.code) + "</td>" +
               "<td>" + escapeHtml(item.description) + "</td>" +
               (usaQuantidade
-                ? "<td>" + item.quantity + "</td>"
+                ? "<td>" + formatQuantity(item.quantity) + "</td>"
                 : "<td>" + escapeHtml(shelf.linha || "—") + "</td>" +
                   "<td>" + escapeHtml(shelf.coluna || "—") + "</td>") +
             "</tr>"
@@ -2312,6 +2317,7 @@
   // "Prateleira atual"); itemId só é usado no modo "edit".
   function openItemFormPage(mode, shelfId, itemId) {
     state.itemFormMode = mode;
+    state.itemFormReturnTab = state.activeTab === "divergencias" ? "divergencias" : "estoque";
     state.itemFormShelfId = shelfId;
     state.itemFormItemId = itemId || null;
     renderItemFormPage();
@@ -2320,8 +2326,7 @@
   }
 
   function closeItemFormPage() {
-    document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
-    document.getElementById("page-estoque").classList.add("active");
+    setActiveTab(state.itemFormReturnTab || "estoque");
   }
 
   function renderItemFormPage() {
@@ -2625,10 +2630,35 @@
   }
 
   // Export / Import backup
-  // Monta o arquivo de backup (mesmo conteúdo usado tanto pra baixar quanto
-  // pra compartilhar).
+  // Copia todos os dados persistidos, incluindo histórico atual e arquivado,
+  // para o backup baixado ou compartilhado.
+  function buildBackupPayload() {
+    return {
+      shelves: state.shelves,
+      pdfMeta: state.pdfMeta,
+      lastBackupAt: state.lastBackupAt,
+      colorGroupOrder: state.colorGroupOrder,
+      colorGroupCollapsed: state.colorGroupCollapsed,
+      history: state.history,
+      historyArchive: state.historyArchive
+    };
+  }
+
+  function restoreBackupPayload(parsed) {
+    state.shelves = parsed.shelves;
+    state.selectedShelfId = state.shelves[0] ? state.shelves[0].id : null;
+    state.pdfMeta = parsed.pdfMeta && typeof parsed.pdfMeta === "object"
+      ? { revisao: parsed.pdfMeta.revisao || "000", vigencia: parsed.pdfMeta.vigencia || "", formato: parsed.pdfMeta.formato || "linha_coluna" }
+      : { revisao: "000", vigencia: "", formato: "linha_coluna" };
+    state.lastBackupAt = parsed.lastBackupAt || null;
+    state.colorGroupOrder = Array.isArray(parsed.colorGroupOrder) ? parsed.colorGroupOrder : [];
+    state.colorGroupCollapsed = parsed.colorGroupCollapsed && typeof parsed.colorGroupCollapsed === "object" ? parsed.colorGroupCollapsed : {};
+    state.history = Array.isArray(parsed.history) ? parsed.history : [];
+    state.historyArchive = Array.isArray(parsed.historyArchive) ? parsed.historyArchive : [];
+  }
+
   function buildBackupFile(forShare) {
-    var data = JSON.stringify({ shelves: state.shelves }, null, 2);
+    var data = JSON.stringify(buildBackupPayload(), null, 2);
     var date = new Date().toISOString().slice(0, 10);
     if (forShare) {
       // Vários apps/Android restringem quais tipos de arquivo podem ser
@@ -2696,8 +2726,7 @@
           "Importar backup?",
           "Isso vai SUBSTITUIR todos os dados atuais pelos dados do arquivo importado.",
           function () {
-            state.shelves = parsed.shelves;
-            state.selectedShelfId = state.shelves[0] ? state.shelves[0].id : null;
+            restoreBackupPayload(parsed);
             closeModal();
             saveData();
             render();
@@ -2717,8 +2746,9 @@
     state.activeTab = tab;
     document.querySelectorAll(".app-page").forEach(function (p) { p.classList.remove("active"); });
     document.getElementById("page-" + tab).classList.add("active");
+    var navigationTab = tab === "divergencias" ? "opcoes" : tab;
     document.querySelectorAll(".bottom-nav-btn, .desktop-sidenav-btn").forEach(function (b) {
-      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+      b.classList.toggle("active", b.getAttribute("data-tab") === navigationTab);
     });
     if (tab === "inicio") renderInicioPage();
     if (tab === "movimentacao") renderMovimentacaoPage();
@@ -2762,8 +2792,12 @@
     openShelfFormModal(null);
   });
 
-  document.getElementById("optDesktopDivergencias").addEventListener("click", function () {
+  document.getElementById("optDivergencias").addEventListener("click", function () {
     setActiveTab("divergencias");
+  });
+
+  document.getElementById("divergenciasBack").addEventListener("click", function () {
+    setActiveTab("opcoes");
   });
 
   document.getElementById("optPendencias").addEventListener("click", openPendenciasModal);
