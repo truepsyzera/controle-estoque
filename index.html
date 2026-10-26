@@ -321,7 +321,7 @@
   /* Menu lateral de desktop/tablet — escondido por padrão (ver
      .desktop-sidenav acima), só aparece a partir daqui. */
   .desktop-sidenav-brand { padding: 6px 10px 20px; }
-  .desktop-sidenav-logo { height: 30px; width: auto; display: block; }
+  .desktop-sidenav-logo { display: block; width: 104px; max-width: 100%; height: auto; object-fit: contain; }
   .desktop-sidenav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: transparent; border: none; color: #a8a29e; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; width: 100%; }
   .desktop-sidenav-btn:hover { background: #171614; color: #e7e5e4; }
   .desktop-sidenav-btn.active { background: rgba(21,184,201,0.15); color: #15b8c9; }
@@ -344,13 +344,13 @@
     .desktop-notification { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 40px; border: 0; border-radius: 11px; background: transparent; color: #a8a29e; cursor: pointer; }
     .desktop-notification:hover { background: #1c1917; color: #f5f5f4; }
     .desktop-sidenav-brand { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 8px; margin: 0 0 12px; color: #f5f5f4; font-weight: 800; font-size: 16px; }
-    .desktop-brand-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: #f4b400; color: #1c1917; }
+    .desktop-brand-mark { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
     .desktop-brand-version { margin-left: auto; color: #78716c; font-size: 9px; font-weight: 500; }
     .desktop-sidenav-btn { display: flex; align-items: center; gap: 11px; min-height: 38px; padding: 9px 10px; border-radius: 9px; background: transparent; border: 0; color: #a8a29e; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; width: 100%; }
     .desktop-sidenav-btn svg { width: 16px; height: 16px; flex: 0 0 16px; }
     .desktop-sidenav-btn:hover { background: #1c1917; color: #f5f5f4; }
-    .desktop-sidenav-btn.active { background: rgba(245, 158, 11, 0.16); color: #f5f5f4; }
-    .desktop-sidenav-btn.active svg { color: #fbbf24; }
+    .desktop-sidenav-btn.active { background: rgba(21, 184, 201, 0.16); color: #f5f5f4; }
+    .desktop-sidenav-btn.active svg { color: #15b8c9; }
     .desktop-nav-spacer { flex: 1; min-height: 8px; }
     .sidebar { width: 260px; }
     .items-list { padding: 10px 20px 20px; }
@@ -362,7 +362,7 @@
     .desktop-metric-card { min-height: 82px; padding: 14px 16px; }
     .desktop-metric-label { color: #a8a29e; font-size: 11px; font-weight: 500; }
     .desktop-metric-value { margin-top: 3px; color: #f5f5f4; font-size: 23px; font-weight: 800; line-height: 1.15; }
-    .desktop-metric-card.alert .desktop-metric-value { color: #f59e0b; }
+    .desktop-metric-card.alert .desktop-metric-value { color: #15b8c9; }
     .desktop-widget { padding: 15px 16px; }
     .desktop-widget-title { margin-bottom: 12px; color: #e7e5e4; font-size: 12px; font-weight: 800; }
     .desktop-widget-movement { grid-area: movement; min-height: 228px; }
@@ -385,7 +385,7 @@
     .desktop-expiry-list { display: flex; flex-direction: column; gap: 7px; }
     .desktop-expiry-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: 10.5px; }
     .desktop-expiry-description { overflow: hidden; color: #d6d3d1; text-overflow: ellipsis; white-space: nowrap; }
-    .desktop-expiry-meta { color: #facc15; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .desktop-expiry-meta { color: #15b8c9; font-size: 10px; font-weight: 800; white-space: nowrap; }
     .desktop-widget-link { display: block; margin: 10px 0 0 auto; padding: 0; border: 0; background: transparent; color: #a8a29e; font: inherit; font-size: 10px; cursor: pointer; }
     .desktop-widget-link:hover { color: #f5f5f4; }
     .desktop-empty { color: #78716c; font-size: 11px; padding: 8px 0; }
@@ -431,8 +431,8 @@
 <div class="app-shell">
 <nav class="desktop-sidenav">
   <div class="desktop-sidenav-brand">
-    <span class="desktop-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg></span>
-    <span>Denis</span><span class="desktop-brand-version" id="desktopVersion"></span>
+    <span class="desktop-brand-mark"><img class="desktop-sidenav-logo" src="assets/logo.png" alt="Denis - Controle de Estoque"></span>
+    <span class="desktop-brand-version" id="desktopVersion"></span>
   </div>
   <button class="desktop-sidenav-btn active" data-tab="inicio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -680,7 +680,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.5";
+  var APP_VERSION = "Alpha v3.6";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -1196,11 +1196,11 @@
         '<text x="37" y="' + (lineY + 3).toFixed(1) + '" text-anchor="end" fill="#78716c" font-size="9">' + formatQuantity(value) + '</text>';
     }
     root.innerHTML =
-      '<div class="desktop-chart-legend"><span><i class="desktop-chart-key" style="background:#f59e0b"></i>Entradas</span><span><i class="desktop-chart-key" style="background:#a8a29e"></i>Saídas</span></div>' +
+      '<div class="desktop-chart-legend"><span><i class="desktop-chart-key" style="background:#15b8c9"></i>Entradas</span><span><i class="desktop-chart-key" style="background:#a8a29e"></i>Saídas</span></div>' +
       '<svg class="desktop-chart-svg" viewBox="0 0 510 178" role="img" aria-label="Entradas e saídas de unidades nas semanas do mês">' +
         grid +
         '<path d="' + incomingArea + '" fill="rgba(245,158,11,0.10)" stroke="none"/>' +
-        '<path d="' + incomingPath + '" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="' + incomingPath + '" fill="none" stroke="#15b8c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
         '<path d="' + outgoingPath + '" fill="none" stroke="#a8a29e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
         x.map(function (position, index) { return '<text x="' + position + '" y="170" text-anchor="middle" fill="#78716c" font-size="10">S' + (index + 1) + '</text>'; }).join("") +
       '</svg>';
