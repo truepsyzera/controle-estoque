@@ -520,7 +520,7 @@
       <div class="desktop-metric-card alert"><div class="desktop-metric-label">A vencer</div><div class="desktop-metric-value" id="desktopMetricExpiring">0</div></div>
     </div>
     <section class="desktop-widget desktop-widget-movement">
-      <div class="desktop-widget-title">Movimentação mensal</div>
+      <div class="desktop-widget-title">Movimentação diária do mês</div>
       <div id="desktopMovementChart"></div>
     </section>
     <section class="desktop-widget desktop-widget-category">
@@ -680,7 +680,7 @@
 
   // Versão do app, mostrada no cabeçalho e na splash screen. Atualizar só
   // aqui a cada nova versão.
-  var APP_VERSION = "Alpha v3.6";
+  var APP_VERSION = "Alpha v3.7";
 
   // Quantidade igual ou abaixo disso é destacada em vermelho na lista.
   var LOW_STOCK_THRESHOLD = 50;
@@ -1149,15 +1149,15 @@
   }
 
   function getMonthlyMovementSeries() {
-    var buckets = [
-      { incoming: 0, outgoing: 0 }, { incoming: 0, outgoing: 0 },
-      { incoming: 0, outgoing: 0 }, { incoming: 0, outgoing: 0 }
-    ];
     var now = new Date();
+    var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var buckets = Array.from({ length: daysInMonth }, function (_, index) {
+      return { day: index + 1, incoming: 0, outgoing: 0 };
+    });
     state.history.forEach(function (entry) {
       var date = new Date(entry.timestamp);
       if (date.getFullYear() !== now.getFullYear() || date.getMonth() !== now.getMonth()) return;
-      var index = Math.min(3, Math.floor((date.getDate() - 1) / 7));
+      var index = date.getDate() - 1;
       var quantity = Math.max(0, Number(entry.quantity) || 0);
       if (entry.type === "added" || entry.type === "qty_increase") buckets[index].incoming += quantity;
       else if (entry.type === "removed" || entry.type === "qty_decrease") buckets[index].outgoing += quantity;
@@ -1170,24 +1170,32 @@
     if (!root) return;
     var series = getMonthlyMovementSeries();
     var maxValue = 0;
-    series.forEach(function (week) { maxValue = Math.max(maxValue, week.incoming, week.outgoing); });
+    series.forEach(function (day) { maxValue = Math.max(maxValue, day.incoming, day.outgoing); });
     var scaleMax = maxValue > 0 ? Math.ceil(maxValue / 4) * 4 : 4;
-    var x = [55, 194, 333, 472];
+    var plotLeft = 55, plotRight = 472;
     var top = 20, bottom = 150, chartHeight = bottom - top;
     function y(value) { return bottom - (value / scaleMax) * chartHeight; }
     function linePath(key) {
-      var coords = series.map(function (week, index) { return { x: x[index], y: y(week[key]) }; });
+      var coords = series.map(function (day, index) {
+        return { x: plotLeft + index * (plotRight - plotLeft) / Math.max(1, series.length - 1), y: y(day[key]) };
+      });
       var path = "M " + coords[0].x + " " + coords[0].y.toFixed(1);
       for (var index = 1; index < coords.length; index++) {
-        var previous = coords[index - 1], current = coords[index];
-        var middleX = (previous.x + current.x) / 2;
-        path += " C " + middleX.toFixed(1) + " " + previous.y.toFixed(1) + " " + middleX.toFixed(1) + " " + current.y.toFixed(1) + " " + current.x + " " + current.y.toFixed(1);
+        path += " L " + coords[index].x.toFixed(1) + " " + coords[index].y.toFixed(1);
       }
       return path;
     }
     var incomingPath = linePath("incoming");
     var outgoingPath = linePath("outgoing");
-    var incomingArea = incomingPath + " L " + x[3] + " " + bottom + " L " + x[0] + " " + bottom + " Z";
+    var incomingArea = incomingPath + " L " + plotRight + " " + bottom + " L " + plotLeft + " " + bottom + " Z";
+    var incomingPoints = "", outgoingPoints = "";
+    series.forEach(function (day, index) {
+      var pointX = plotLeft + index * (plotRight - plotLeft) / Math.max(1, series.length - 1);
+      var dayLabel = String(day.day).padStart(2, "0") + "/" + String(new Date().getMonth() + 1).padStart(2, "0");
+      var tooltip = dayLabel + " — Entradas: " + formatQuantity(day.incoming) + " un.; Saídas: " + formatQuantity(day.outgoing) + " un.";
+      incomingPoints += '<circle cx="' + pointX.toFixed(1) + '" cy="' + y(day.incoming).toFixed(1) + '" r="2.2" fill="#15b8c9"><title>' + tooltip + '</title></circle>';
+      outgoingPoints += '<circle cx="' + pointX.toFixed(1) + '" cy="' + y(day.outgoing).toFixed(1) + '" r="2.2" fill="#a8a29e"><title>' + tooltip + '</title></circle>';
+    });
     var grid = "";
     for (var i = 0; i <= 4; i++) {
       var value = Math.round(scaleMax * (4 - i) / 4);
@@ -1195,14 +1203,22 @@
       grid += '<line x1="45" y1="' + lineY.toFixed(1) + '" x2="488" y2="' + lineY.toFixed(1) + '" stroke="#302d29" stroke-width="1"/>' +
         '<text x="37" y="' + (lineY + 3).toFixed(1) + '" text-anchor="end" fill="#78716c" font-size="9">' + formatQuantity(value) + '</text>';
     }
+    var dayLabels = series.filter(function (day, index) {
+      return index === 0 || day.day % 5 === 0 || index === series.length - 1;
+    }).map(function (day) {
+      var index = day.day - 1;
+      var position = plotLeft + index * (plotRight - plotLeft) / Math.max(1, series.length - 1);
+      var anchor = index === 0 ? "start" : (index === series.length - 1 ? "end" : "middle");
+      return '<text x="' + position.toFixed(1) + '" y="170" text-anchor="' + anchor + '" fill="#78716c" font-size="9">' + String(day.day).padStart(2, "0") + '</text>';
+    }).join("");
     root.innerHTML =
       '<div class="desktop-chart-legend"><span><i class="desktop-chart-key" style="background:#15b8c9"></i>Entradas</span><span><i class="desktop-chart-key" style="background:#a8a29e"></i>Saídas</span></div>' +
-      '<svg class="desktop-chart-svg" viewBox="0 0 510 178" role="img" aria-label="Entradas e saídas de unidades nas semanas do mês">' +
+      '<svg class="desktop-chart-svg" viewBox="0 0 510 178" role="img" aria-label="Entradas e saídas de unidades por dia no mês atual. Passe sobre os pontos para ver os totais diários.">' +
         grid +
-        '<path d="' + incomingArea + '" fill="rgba(245,158,11,0.10)" stroke="none"/>' +
+        '<path d="' + incomingArea + '" fill="rgba(21,184,201,0.10)" stroke="none"/>' +
         '<path d="' + incomingPath + '" fill="none" stroke="#15b8c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
         '<path d="' + outgoingPath + '" fill="none" stroke="#a8a29e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-        x.map(function (position, index) { return '<text x="' + position + '" y="170" text-anchor="middle" fill="#78716c" font-size="10">S' + (index + 1) + '</text>'; }).join("") +
+        incomingPoints + outgoingPoints + dayLabels +
       '</svg>';
   }
 
